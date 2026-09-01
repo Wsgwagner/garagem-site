@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Garagem</title>
+<meta name="description" content="Histórico de manutenção, peças trocadas e abastecimentos dos seus veículos, com alertas de próxima troca.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0D5D68">
+<link rel="icon" href="img/icon-192.png">
+<link rel="apple-touch-icon" href="img/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ================= sem veículo cadastrado ================= -->
+  <section id="boas-vindas" hidden>
+    <div class="hero">
+      <span class="eyebrow">Garagem</span>
+      <h1>O histórico do seu carro, no seu bolso</h1>
+      <p>Cadastre um veículo e o app monta o plano de manutenção preventiva dele: o que trocar,
+         de quantos em quantos quilômetros e quando. Você registra o que já fez, ele avisa o que
+         está chegando na hora. Os dados ficam neste aparelho.</p>
+      <button class="btn btn-primary btn-grande" id="primeiro-veiculo">Cadastrar meu veículo</button>
+      <p class="hint" style="margin-top:16px">Já tem um backup de antes?
+        <button class="link" id="restaurar-inicio">Restaurar backup</button></p>
+    </div>
+  </section>
+
+  <!-- ================= app ================= -->
+  <div id="app" hidden>
+    <header class="top">
+      <div class="badge-car">
+        <div class="veic-bar">
+          <select id="sel-veiculo" aria-label="Veículo"></select>
+          <button class="btn btn-sm" id="btn-editar-veiculo">Editar</button>
+          <button class="btn btn-sm" id="btn-novo-veiculo">+ Veículo</button>
+        </div>
+        <h1 id="veic-nome">—</h1>
+        <span class="sub" id="veic-sub"></span>
+      </div>
+      <div class="odo">
+        <span class="eyebrow">Odômetro atual</span>
+        <div class="odo-field">
+          <input id="km-atual" class="mono" type="number" inputmode="numeric" min="0" step="1" value="0" aria-label="Quilometragem atual">
+          <span>km</span>
+        </div>
+        <span class="helper" id="km-note"></span>
+      </div>
+    </header>
+
+    <section class="tiles" id="tiles"></section>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-alertas" aria-selected="true" data-tab="alertas">Próximas trocas <span class="count" id="c-alertas"></span></button>
+      <button class="tab" role="tab" id="tab-manut" aria-selected="false" data-tab="manut">Peças e serviços <span class="count" id="c-manut"></span></button>
+      <button class="tab" role="tab" id="tab-abast" aria-selected="false" data-tab="abast">Abastecimentos <span class="count" id="c-abast"></span></button>
+      <button class="tab" role="tab" id="tab-plano" aria-selected="false" data-tab="plano">Plano de manutenção</button>
+    </nav>
+
+    <section class="panel" id="panel-alertas" role="tabpanel" aria-labelledby="tab-alertas">
+      <div class="panel-head">
+        <div>
+          <h2>O que está chegando na hora</h2>
+          <p class="hint">Enquanto não houver registro seu, o prazo é estimado pelo plano a partir do odômetro. Depois do primeiro registro, a conta passa a sair dele.</p>
+        </div>
+        <div class="check" style="align-self:flex-end">
+          <input type="checkbox" id="uso-severo">
+          <label for="uso-severo">Uso severo</label>
+        </div>
+      </div>
+      <div id="alertas-list" class="stack"></div>
+    </section>
+
+    <section class="panel" id="panel-manut" role="tabpanel" aria-labelledby="tab-manut" hidden>
+      <div class="panel-head">
+        <div class="seg" role="group" aria-label="Modo de visualização">
+          <button id="view-hist" aria-pressed="true">Linha do tempo</button>
+          <button id="view-peca" aria-pressed="false">Por peça</button>
+        </div>
+        <button class="btn btn-primary" id="add-manut">+ Registrar troca ou serviço</button>
+      </div>
+      <div id="manut-list" class="stack"></div>
+    </section>
+
+    <section class="panel" id="panel-abast" role="tabpanel" aria-labelledby="tab-abast" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>Abastecimentos e consumo</h2>
+          <p class="hint">O km/l é calculado entre dois abastecimentos com tanque cheio.</p>
+        </div>
+        <button class="btn btn-primary" id="add-abast">+ Registrar abastecimento</button>
+      </div>
+      <div id="abast-list"></div>
+    </section>
+
+    <section class="panel" id="panel-plano" role="tabpanel" aria-labelledby="tab-plano" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>Plano de manutenção</h2>
+          <p class="hint" id="plano-origem"></p>
+        </div>
+        <span style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="add-item-plano">+ Item</button>
+          <button class="btn" id="refazer-plano">Refazer pelo modelo</button>
+        </span>
+      </div>
+      <div id="plano-list"></div>
+    </section>
+
+    <footer class="foot">
+      <span class="storage"><span class="dot" id="store-dot"></span><span id="store-label">Salvo neste aparelho</span></span>
+      <span style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm btn-primary" id="gerar-pdf">Gerar PDF do histórico</button>
+        <button class="btn btn-sm" id="baixar-backup">Salvar backup</button>
+        <button class="btn btn-sm" id="restaurar-backup">Restaurar backup</button>
+        <button class="btn btn-sm" id="importar-csv">Importar CSV</button>
+        <button class="btn btn-sm" id="export-manut">Histórico em CSV</button>
+        <button class="btn btn-sm" id="export-abast">Abastecimentos em CSV</button>
+        <button class="btn btn-sm" id="instalar" hidden>Instalar no celular</button>
+      </span>
+    </footer>
+    <p class="hint" style="margin-top:10px;font-size:12.5px;color:var(--muted)" id="aviso-backup"></p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<input type="file" id="arquivo-backup" accept="application/json,.json" hidden>
+<input type="file" id="arquivo-csv" accept="text/csv,.csv,.txt" multiple hidden>
+<div id="relatorio"></div>
+
+<datalist id="pecas-comuns"></datalist>
+<datalist id="oficinas"></datalist>
+<datalist id="postos"></datalist>
+
+<!-- ================= veículo ================= -->
+<dialog id="dlg-veiculo">
+  <form method="dialog" id="form-veiculo">
+    <div class="dlg-head"><h2 id="dlg-veiculo-title">Cadastrar veículo</h2></div>
+    <div class="dlg-body">
+      <div class="grid">
+        <div class="field full">
+          <label for="v-modelo-lib">Modelo conhecido</label>
+          <select id="v-modelo-lib"></select>
+          <span class="helper" id="v-modelo-ajuda"></span>
+        </div>
+        <div class="field"><label for="v-apelido">Como você chama ele</label><input type="text" id="v-apelido" placeholder="Livina" required></div>
+        <div class="field"><label for="v-placa">Placa</label><input type="text" id="v-placa" placeholder="Opcional"></div>
+        <div class="field"><label for="v-marca">Marca</label><input type="text" id="v-marca" placeholder="Nissan"></div>
+        <div class="field"><label for="v-modelo">Modelo</label><input type="text" id="v-modelo" placeholder="Grand Livina"></div>
+        <div class="field"><label for="v-ano">Ano</label><input type="text" id="v-ano" inputmode="numeric" placeholder="2013"></div>
+        <div class="field"><label for="v-km">Odômetro hoje</label><input type="number" id="v-km" min="0" step="1" inputmode="numeric"></div>
+      </div>
+
+      <div class="sec-title">Perfil do veículo — é o que monta o plano</div>
+      <div class="grid" id="v-perfil"></div>
+      <div class="check" style="margin-top:14px">
+        <input type="checkbox" id="v-severo">
+        <label for="v-severo">Uso severo: trânsito parado, poeira, terra ou trajetos curtos</label>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn btn-ghost" id="v-excluir" hidden>Excluir veículo</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="v-cancelar">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ================= item do plano ================= -->
+<dialog id="dlg-item">
+  <form method="dialog" id="form-item">
+    <div class="dlg-head"><h2 id="dlg-item-title">Item do plano</h2></div>
+    <div class="dlg-body">
+      <div class="grid">
+        <div class="field full"><label for="i-nome">Item</label><input type="text" id="i-nome" list="pecas-comuns" required></div>
+        <div class="field"><label for="i-cat">Categoria</label>
+          <select id="i-cat">
+            <option>Motor</option><option>Filtros e fluidos</option><option>Freios</option><option>Suspensão e direção</option>
+            <option>Câmbio e embreagem</option><option>Arrefecimento</option><option>Elétrica</option><option>Pneus e rodas</option>
+            <option>Ar-condicionado</option><option>Carroceria e interior</option><option>Revisão geral</option><option>Outro</option>
+          </select>
+        </div>
+        <div class="field check" style="align-self:end">
+          <input type="checkbox" id="i-ativo" checked><label for="i-ativo">Acompanhar este item</label>
+        </div>
+        <div class="field"><label for="i-km">A cada (km)</label><input type="number" id="i-km" min="0" step="500" inputmode="numeric"></div>
+        <div class="field"><label for="i-meses">Ou a cada (meses)</label><input type="number" id="i-meses" min="0" step="1" inputmode="numeric"></div>
+        <div class="field"><label for="i-sevkm">Uso severo (km)</label><input type="number" id="i-sevkm" min="0" step="500" inputmode="numeric"></div>
+        <div class="field"><label for="i-sevmeses">Uso severo (meses)</label><input type="number" id="i-sevmeses" min="0" step="1" inputmode="numeric"></div>
+        <div class="field full"><label for="i-nota">Observação</label><textarea id="i-nota" placeholder="De onde veio esse intervalo, cuidados, o que o manual diz…"></textarea></div>
+      </div>
+      <p class="helper" style="margin-top:10px">Deixe em zero o que não se aplica. Sem km e sem meses, o item aparece no plano mas não gera alerta.</p>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn btn-ghost" id="i-excluir" hidden>Remover do plano</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="i-cancelar">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ================= manutenção ================= -->
+<dialog id="dlg-manut">
+  <form method="dialog" id="form-manut">
+    <div class="dlg-head"><h2 id="dlg-manut-title">Registrar troca ou serviço</h2></div>
+    <div class="dlg-body">
+      <div class="grid">
+        <div class="field"><label for="m-data">Data</label><input type="date" id="m-data" required></div>
+        <div class="field"><label for="m-km">Km no serviço</label><input type="number" id="m-km" min="0" step="1" inputmode="numeric" required></div>
+        <div class="field full"><label for="m-item">Peça ou serviço</label><input type="text" id="m-item" list="pecas-comuns" placeholder="Ex.: Pastilhas de freio dianteiras" required></div>
+        <div class="field"><label for="m-cat">Categoria</label>
+          <select id="m-cat">
+            <option>Motor</option><option>Filtros e fluidos</option><option>Freios</option><option>Suspensão e direção</option>
+            <option>Câmbio e embreagem</option><option>Arrefecimento</option><option>Elétrica</option><option>Pneus e rodas</option>
+            <option>Ar-condicionado</option><option>Carroceria e interior</option><option>Revisão geral</option><option>Outro</option>
+          </select>
+        </div>
+        <div class="field"><label for="m-oficina">Oficina</label><input type="text" id="m-oficina" list="oficinas" placeholder="Onde foi feito"></div>
+        <div class="field"><label for="m-pecas">Custo das peças (R$)</label><input type="number" id="m-pecas" min="0" step="0.01" inputmode="decimal"></div>
+        <div class="field"><label for="m-mo">Mão de obra (R$)</label><input type="number" id="m-mo" min="0" step="0.01" inputmode="decimal"></div>
+        <div class="field full"><label for="m-obs">Observações</label><textarea id="m-obs" placeholder="Marca da peça, garantia, o que o mecânico falou…"></textarea></div>
+      </div>
+      <div class="sec-title">Próxima troca — preenchida sozinha pelo plano</div>
+      <p class="helper" id="m-plano-nota" style="margin:0 0 10px">Escolha a peça acima e o app sugere quando trocar de novo. Você pode alterar à vontade.</p>
+      <div class="grid">
+        <div class="field">
+          <label for="m-proxkm">Trocar de novo aos (km)</label>
+          <input type="number" id="m-proxkm" min="0" step="1" inputmode="numeric">
+          <div class="quick" id="quick-km">
+            <button type="button" data-add="5000">+5.000</button>
+            <button type="button" data-add="10000">+10.000</button>
+            <button type="button" data-add="20000">+20.000</button>
+            <button type="button" data-add="40000">+40.000</button>
+            <button type="button" data-add="60000">+60.000</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="m-proxdata">Ou até a data</label>
+          <input type="date" id="m-proxdata">
+          <div class="quick" id="quick-data">
+            <button type="button" data-months="6">+6 meses</button>
+            <button type="button" data-months="12">+1 ano</button>
+            <button type="button" data-months="24">+2 anos</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn btn-ghost" id="m-delete" hidden>Excluir</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="m-cancel">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ================= abastecimento ================= -->
+<dialog id="dlg-abast">
+  <form method="dialog" id="form-abast">
+    <div class="dlg-head"><h2 id="dlg-abast-title">Registrar abastecimento</h2></div>
+    <div class="dlg-body">
+      <div class="grid">
+        <div class="field"><label for="a-data">Data</label><input type="date" id="a-data" required></div>
+        <div class="field"><label for="a-km">Km no painel</label><input type="number" id="a-km" min="0" step="1" inputmode="numeric" required></div>
+        <div class="field"><label for="a-litros">Litros</label><input type="number" id="a-litros" min="0" step="0.001" inputmode="decimal" required></div>
+        <div class="field"><label for="a-valor">Valor total (R$)</label><input type="number" id="a-valor" min="0" step="0.01" inputmode="decimal"></div>
+        <div class="field"><label for="a-comb">Combustível</label>
+          <select id="a-comb"><option>Gasolina</option><option>Etanol</option><option>Gasolina aditivada</option><option>Diesel</option><option>Diesel S-10</option><option>GNV</option></select>
+        </div>
+        <div class="field"><label for="a-posto">Posto</label><input type="text" id="a-posto" list="postos" placeholder="Opcional"></div>
+        <div class="field full check"><input type="checkbox" id="a-cheio" checked><label for="a-cheio">Enchi o tanque (necessário para calcular km/l)</label></div>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn btn-ghost" id="a-delete" hidden>Excluir</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="a-cancel">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
