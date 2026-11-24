@@ -4,8 +4,8 @@
    Com apiKey vazia a nuvem fica desligada e o app funciona só no aparelho. */
 
 export const FIREBASE = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  appId: ""
+  apiKey: "AIzaSyBnH8h4Zk-1AJkNXFnON8xy5ZApckVgpOA",
+  authDomain: "garagem-ca1dc.firebaseapp.com",
+  projectId: "garagem-ca1dc",
+  appId: "1:65228763904:web:2149e81869d882abf6f9e5"
 };
