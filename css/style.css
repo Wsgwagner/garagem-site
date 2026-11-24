@@ -264,6 +264,31 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 .rev-item input[type=number]{width:120px;flex-shrink:0}
 .rev-novo{display:flex;gap:8px;margin-top:12px}
 
+/* ---------- custos (cores validadas para daltonismo nos dois temas) ---------- */
+:root{--s-manut:#2a78d6;--s-comb:#1baf7a;--s-docs:#eda100}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--s-manut:#3987e5;--s-comb:#199e70;--s-docs:#c98500}}
+:root[data-theme="dark"]{--s-manut:#3987e5;--s-comb:#199e70;--s-docs:#c98500}
+.cor-manut{background:var(--s-manut)} .cor-comb{background:var(--s-comb)} .cor-docs{background:var(--s-docs)}
+.legenda{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin-bottom:10px}
+.legenda span{display:inline-flex;align-items:center;gap:6px}
+.legenda i{width:11px;height:11px;border-radius:3px}
+.grafico{display:flex;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 12px 8px}
+.eixo{display:flex;flex-direction:column;justify-content:space-between;height:194px;font-size:11px;color:var(--muted);text-align:right;white-space:nowrap;margin:-7px 0}
+.colunas{flex:1;min-width:0;display:flex}
+.coluna{flex:1;min-width:0;appearance:none;border:0;background:none;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:stretch;border-radius:4px}
+.coluna:hover,.coluna:focus-visible{background:var(--surface-2)}
+.coluna:focus-visible{outline:2px solid var(--accent)}
+.pilha{height:180px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:2px;
+  border-bottom:1px solid var(--line-strong);background:linear-gradient(var(--line),var(--line)) 0 0/100% 1px no-repeat,linear-gradient(var(--line),var(--line)) 0 50%/100% 1px no-repeat}
+.pilha i{width:min(24px,64%);min-height:2px;flex-shrink:1}
+.pilha i:first-child{border-radius:4px 4px 0 0}
+.mes{font-size:11px;color:var(--muted);text-align:center;padding-top:5px}
+#custo-detalhe{margin:8px 0 0;min-height:2.8em}
+#custo-detalhe b{color:var(--ink)}
+.cat-linha{display:grid;grid-template-columns:minmax(110px,170px) 1fr auto;gap:10px;align-items:center;padding:5px 0;font-size:14px}
+.cat-trilho i{display:block;height:14px;min-width:2px;border-radius:0 4px 4px 0}
+@media (max-width:620px){.mes.par{visibility:hidden}.cat-linha{grid-template-columns:104px 1fr auto;font-size:13px}}
+
 #docs-alertas:not(:empty){margin-bottom:14px}
 
 /* ---------- footer ---------- */

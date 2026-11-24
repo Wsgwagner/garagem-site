@@ -92,3 +92,18 @@ test('documentos: nível, gasto e próximo', () => {
   assert.equal(k.proximoDoc(d('2026-01-31'), 'z', [p]), null);
   assert.equal(k.proximoDoc(d('2026-01-31', { repete: 0 }), 'z', []), null);
 });
+test('custo total: meses, categorias, sem valor e por km', () => {
+  const m = (data, km, p, mo, categoria) => ({ data, km, custoPecas: p, custoMaoObra: mo, categoria });
+  const c = k.custos({
+    manut: [m('2026-07-03', 148000, 50, 0, 'Motor'), m('2026-08-31', 149000, 100, 20, 'Freios'), m('2026-11-24', 150000, 0, 0, 'Motor'),
+      m('2025-11-30', 1, 999, 0, 'Motor'), m('2026-11-30', 1, 999, 0, 'Motor'), m('', 0, 999, 0, 'Motor')],
+    abast: [{ data: '2026-11-01', km: 149500, valor: 280 }],
+    docs: [{ tipo: 'IPVA', pago: true, pagoEm: '2025-12-01', valor: 1000 }, { tipo: 'Multa', pago: false, valor: 5 }]
+  }, '2026-11-24');
+  assert.equal(c.meses.length, 12);
+  assert.equal(c.meses[0].mes, '2025-12'); assert.equal(c.meses[11].mes, '2026-11');
+  assert.equal(c.total, 1450); assert.equal(c.semValor, 1);
+  assert.deepEqual(c.categorias.map(x => x.nome), ['IPVA', 'Combustível', 'Freios', 'Motor']);
+  assert.equal(c.porKm, 400 / 2000);
+  assert.equal(k.custos({}, '2026-01-31').meses[0].mes, '2025-02');
+});

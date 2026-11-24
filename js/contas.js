@@ -83,7 +83,7 @@ function ritmo(registros, hoje){
   function calc(l){
     if (l.length < 2) return null;
     var a = l[0], b = l[l.length - 1], dias = b.dia - a.dia, km = b.km - a.km;
-    return dias >= 30 && km > 0 ? { kmDia: km / dias, ultimo: isoDe(b.dia) } : null;
+    return dias >= 30 && km > 0 ? { kmDia: km / dias, km: km, primeiro: isoDe(a.dia), ultimo: isoDe(b.dia) } : null;
   }
   return calc(pontos.filter(function(p){ return p.dia >= h - 365; })) || calc(pontos);
 }
@@ -119,6 +119,50 @@ function proximoDoc(d, id, existentes){
     repete:d.repete, pago:false, pagoEm:"", obs:"" };
 }
 
+/* ---------- custo total ---------- */
+/* Tudo o que o carro gastou nos 12 meses que terminam no mês de hoje. */
+function custos(v, hoje){
+  var meses = [], idx = {}, cats = {}, lanc = [], semValor = 0;
+  for (var i = 11; i >= 0; i--){
+    var mes = somaMeses(hoje.slice(0, 8) + "01", -i) || hoje.slice(0, 8) + "01";
+    idx[mes.slice(0, 7)] = meses.length;
+    meses.push({ mes: mes.slice(0, 7), manut:0, comb:0, docs:0, total:0 });
+  }
+  function por(tipo, cat, data, valor){
+    data = data || "";
+    var m = meses[idx[data.slice(0, 7)]];
+    if (!m || data > hoje) return false;
+    if (valor > 0){
+      lanc.push({ data:data, valor:valor });
+      m[tipo] += valor; m.total += valor;
+      if (!cats[cat]) cats[cat] = { nome:cat, tipo:tipo, valor:0 };
+      cats[cat].valor += valor;
+    }
+    return true;
+  }
+  (v.manut || []).forEach(function(m){
+    var valor = n(m.custoPecas) + n(m.custoMaoObra);
+    if (por("manut", m.categoria || "Outro", m.data, valor) && !valor) semValor++;
+  });
+  (v.abast || []).forEach(function(a){ por("comb", "Combustível", a.data, n(a.valor)); });
+  (v.docs || []).forEach(function(d){ if (d.pago) por("docs", d.tipo === "Outro" ? "Outras despesas" : d.tipo, d.pagoEm, n(d.valor)); });
+
+  var r = ritmo((v.manut || []).concat(v.abast || []).filter(function(x){
+    return (x.data || "") >= meses[0].mes;
+  }), hoje), porKm = null;
+  // Só entra o que foi gasto enquanto esses km eram rodados.
+  if (r){
+    var g = lanc.reduce(function(s, l){ return s + (l.data > r.primeiro && l.data <= r.ultimo ? l.valor : 0); }, 0);
+    porKm = g ? g / r.km : null;
+  }
+  return {
+    meses: meses, semValor: semValor, porKm: porKm, km: r ? r.km : 0,
+    total: meses.reduce(function(s, m){ return s + m.total; }, 0),
+    categorias: Object.keys(cats).map(function(c){ return cats[c]; })
+      .sort(function(a, b){ return b.valor - a.valor; })
+  };
+}
+
 /* Divide um valor em n partes iguais em centavos; a sobra vai para as primeiras. */
 function ratear(valor, partes){
   var cent = Math.round(n(valor) * 100), base = Math.floor(cent / partes), sobra = cent - base * partes, out = [];
@@ -128,4 +172,4 @@ function ratear(valor, partes){
 /* Salto grande demais costuma ser um dígito a mais. */
 function saltoSuspeito(atual, novo){ return atual > 0 && novo - atual > 20000; }
 
-export { somaMeses, consumosDe, mediaDe, estimar, desfazerKm, aplicarKm, ratear, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };
+export { somaMeses, consumosDe, mediaDe, estimar, desfazerKm, aplicarKm, ratear, custos, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };

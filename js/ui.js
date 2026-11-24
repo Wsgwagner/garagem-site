@@ -8,6 +8,7 @@ import { renderVeiculo, abrirVeiculo } from './ui-veiculos.js';
 import { renderPlano } from './ui-plano.js';
 import { abrirManut, abrirAbast } from './ui-formularios.js';
 import { renderDocs, docsAlerta, gastoDocsDoAno } from './ui-docs.js';
+import { renderCustos } from './ui-custos.js';
 import { marcaArmazenamento } from './ui-dados.js';
 import { saltoSuspeito } from './contas.js';
 import { esc, num, fmtData, fmtKm, fmtBRL, fmtDec, totalManut, chave, hoje, diasAte, toast } from './util.js';
@@ -41,6 +42,7 @@ function render(){
   renderManut();
   renderAbast();
   renderDocs();
+  renderCustos();
   renderPlano();
   renderDatalists();
   marcaArmazenamento();
@@ -260,7 +262,7 @@ function renderDatalists(){
 /* ---------- abas ---------- */
 function irPara(t){
   tab = t;
-  ["alertas","manut","abast","docs","plano"].forEach(function(k){
+  ["alertas","manut","abast","docs","custos","plano"].forEach(function(k){
     document.getElementById("tab-"+k).setAttribute("aria-selected", String(k === t));
     document.getElementById("panel-"+k).hidden = (k !== t);
   });

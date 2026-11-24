@@ -61,6 +61,7 @@
       <button class="tab" role="tab" id="tab-manut" aria-selected="false" data-tab="manut">Peças e serviços <span class="count" id="c-manut"></span></button>
       <button class="tab" role="tab" id="tab-abast" aria-selected="false" data-tab="abast">Abastecimentos <span class="count" id="c-abast"></span></button>
       <button class="tab" role="tab" id="tab-docs" aria-selected="false" data-tab="docs">Documentos <span class="count" id="c-docs"></span></button>
+      <button class="tab" role="tab" id="tab-custos" aria-selected="false" data-tab="custos">Custos</button>
       <button class="tab" role="tab" id="tab-plano" aria-selected="false" data-tab="plano">Plano de manutenção</button>
     </nav>
 
@@ -114,6 +115,16 @@
         <button class="btn btn-primary" id="add-doc">+ Documento ou despesa</button>
       </div>
       <div id="docs-list" class="stack"></div>
+    </section>
+
+    <section class="panel" id="panel-custos" role="tabpanel" aria-labelledby="tab-custos" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>Custo total do carro</h2>
+          <p class="hint">Manutenção, combustível e documentos pagos nos últimos 12 meses.</p>
+        </div>
+      </div>
+      <div id="custos-box"></div>
     </section>
 
     <section class="panel" id="panel-plano" role="tabpanel" aria-labelledby="tab-plano" hidden>
