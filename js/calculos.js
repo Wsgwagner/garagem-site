@@ -3,8 +3,8 @@
    Tudo aqui olha para o veículo ativo. */
 
 import { veiculo } from './dados.js';
-import { num, chave, diasAte, somaMeses, fmtKm } from './util.js';
-import { consumosDe, mediaDe, estimar } from './contas.js';
+import { num, chave, hoje, diasAte, somaMeses, fmtKm } from './util.js';
+import { consumosDe, mediaDe, estimar, ritmo, preverData } from './contas.js';
 
 function planoDoVeiculo(){
   var v = veiculo();
@@ -47,12 +47,22 @@ function ultimoRegistro(){
   return porPeca;
 }
 
+/* Quanto você roda por dia e quando o odômetro foi lido pela última vez. */
+function ritmoAtual(){
+  var v = veiculo(); if (!v) return null;
+  var r = ritmo(v.manut.concat(v.abast), hoje());
+  if (!r) return null;
+  var lido = (v.atualizadoEm || "") > r.ultimo && v.atualizadoEm <= hoje() ? v.atualizadoEm : r.ultimo;
+  return { kmDia: r.kmDia, kmMes: r.kmDia * 365 / 12, lidoEm: lido };
+}
+
 /* Um item por peça: os itens do plano do veículo + tudo que você registrou.
    A próxima troca sai do que você definiu no registro; se não definiu, do plano;
    se nunca registrou, é estimada pelo odômetro, mas só vale como "em dia" enquanto
    a primeira troca não chegou. Depois disso o app pede para você confirmar. */
 function alertas(){
   var reg = ultimoRegistro(), km = kmAtual(), vistos = {}, out = [];
+  var rit = ritmoAtual();
 
   function montar(nome, p, m){
     var iv = p ? intervalo(p) : { km:0, meses:0 };
@@ -80,7 +90,11 @@ function alertas(){
     var ordem = Math.min(faltaKm === null ? 1e9 : faltaKm, faltaDias === null ? 1e9 : faltaDias * 40);
     if (origem === "confirmar" && nivel === "ok") nivel = "conf";
     if (origem === "sem-registro") ordem = 2e9;
-    return { nome:nome, p:p, m:m, proxKm:proxKm, proxData:proxData, origem:origem,
+    // Só há previsão quando o alvo em km é confiável e ainda não chegou.
+    var prevista = rit && (nivel === "ok" || nivel === "warn") && origem !== "confirmar" && faltaKm > 0
+      ? preverData(faltaKm, rit.kmDia, rit.lidoEm) : "";
+    if (prevista && proxData && proxData <= prevista) prevista = "";
+    return { prevista:prevista, nome:nome, p:p, m:m, proxKm:proxKm, proxData:proxData, origem:origem,
              faltaKm:faltaKm, faltaDias:faltaDias, nivel:nivel, ordem:ordem };
   }
 
@@ -115,4 +129,4 @@ function custoPorKm(){
   return gasto ? gasto / rodados : null;
 }
 
-export { intervalo, textoIntervalo, kmAtual, ultimoRegistro, alertas, consumos, consumoMedio, custoPorKm, planoDoVeiculo };
+export { intervalo, textoIntervalo, kmAtual, ritmoAtual, ultimoRegistro, alertas, consumos, consumoMedio, custoPorKm, planoDoVeiculo };

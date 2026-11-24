@@ -57,3 +57,20 @@ test('rateio fecha com o total', () => {
   assert.deepEqual(k.ratear(100, 3), [33.34, 33.33, 33.33]);
   assert.deepEqual(k.ratear(0, 2), [0, 0]);
 });
+test('ritmo usa o último ano e ignora futuro e km vazio', () => {
+  const r = k.ritmo([
+    { data: '2020-01-01', km: 1000 }, { data: '2026-07-03', km: 148000 }, { data: '2026-08-31', km: 148000 },
+    { data: '2026-11-24', km: 153355 }, { data: '2026-11-24', km: 149000 }, { data: '2026-10-01', km: 0 },
+    { data: '2030-01-01', km: 999999 }], '2026-11-24');
+  assert.equal(Math.round(r.kmDia * 144), 5355);
+  assert.equal(r.ultimo, '2026-11-24');
+});
+test('ritmo sem dados suficientes', () => {
+  assert.equal(k.ritmo([], '2026-11-24'), null);
+  assert.equal(k.ritmo([{ data: '2026-11-01', km: 1 }, { data: '2026-11-20', km: 900 }], '2026-11-24'), null);
+});
+test('previsão de data', () => {
+  assert.equal(k.preverData(1000, 10, '2026-11-24'), '2027-03-04');
+  assert.equal(k.preverData(0, 10, '2026-11-24'), '');
+  assert.equal(k.preverData(1e9, 10, '2026-11-24'), '');
+});

@@ -3,13 +3,13 @@
    abas e odômetro. Chama os outros módulos de tela para as partes deles. */
 
 import { state, veiculo, salvarPerfil, cacheLocal } from './dados.js';
-import { alertas, consumos, consumoMedio, kmAtual, custoPorKm, textoIntervalo } from './calculos.js';
+import { alertas, consumos, consumoMedio, ritmoAtual, kmAtual, custoPorKm, textoIntervalo } from './calculos.js';
 import { renderVeiculo, abrirVeiculo } from './ui-veiculos.js';
 import { renderPlano } from './ui-plano.js';
 import { abrirManut, abrirAbast } from './ui-formularios.js';
 import { marcaArmazenamento } from './ui-dados.js';
 import { saltoSuspeito } from './contas.js';
-import { esc, num, fmtData, fmtKm, fmtBRL, fmtDec, totalManut, chave, toast } from './util.js';
+import { esc, num, fmtData, fmtKm, fmtBRL, fmtDec, totalManut, chave, hoje, diasAte, toast } from './util.js';
 
 var tab = "alertas", manutView = "hist";
 
@@ -71,6 +71,13 @@ function renderTiles(al, km){
   document.getElementById("tiles").innerHTML = html;
 }
 
+var MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+function textoPrevisao(iso){
+  var dias = diasAte(iso), p = iso.split("-");
+  if (dias <= 7) return "Pela sua média, deve chegar por agora";
+  if (dias <= 60) return "Pela sua média, por volta de " + p[2] + "/" + p[1];
+  return "Pela sua média, por volta de " + MESES[Number(p[1]) - 1] + (p[0] === hoje().slice(0,4) ? "" : " de " + p[0]);
+}
 function cardAlerta(a){
   var partes = [];
   if (a.faltaKm !== null) partes.push(a.faltaKm > 0 ? "faltam " + fmtKm(a.faltaKm) + " km" : "passou " + fmtKm(-a.faltaKm) + " km");
@@ -94,6 +101,7 @@ function cardAlerta(a){
         (a.p ? '<span class="pill">a cada '+esc(textoIntervalo(a.p))+'</span>' : '')+
       '</div>'+
       (alvo.length && a.nivel !== "conf" ? '<div class="meta"><span>Alvo'+(a.origem === "confirmar" ? " provável" : "")+': '+esc(alvo.join(" ou "))+'</span><span>'+esc(partes.join(" · "))+'</span></div>' : '')+
+      (a.prevista ? '<div class="meta"><span><b>'+esc(textoPrevisao(a.prevista))+'</b></span></div>' : '')+
       '<div class="meta"><span>'+linha2+'</span></div>'+
       (a.p && a.p.nota ? '<div class="obs">'+esc(a.p.nota)+'</div>' : '')+
     '</div>'+
@@ -112,6 +120,9 @@ function renderAlertas(al){
       '<p>Coloque a quilometragem que está no painel, ali em cima. Com ela o app já calcula, pelo plano do veículo, o que está próximo de vencer — mesmo antes de você registrar qualquer coisa.</p></div>';
     return;
   }
+  var rit = ritmoAtual();
+  document.getElementById("ritmo").textContent = rit ? "Você roda cerca de " + fmtKm(Math.round(rit.kmMes / 10) * 10) + " km por mês."
+    : "Com registros de km separados por pelo menos 30 dias, o app também prevê a data.";
   var atencao = al.filter(function(a){ return a.nivel === "crit" || a.nivel === "warn"; });
   var emDia   = al.filter(function(a){ return a.nivel === "ok"; });
   var conf    = al.filter(function(a){ return a.nivel === "conf"; });

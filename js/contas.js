@@ -61,6 +61,40 @@ function aplicarKm(v, antigo, novo){
   if (n(novo.km) > n(v.kmAtual)){ novo.kmAntes = n(v.kmAtual); v.kmAtual = n(novo.km); }
   return n(v.kmAtual) !== antes;
 }
+/* ---------- previsão ---------- */
+var DIA = 86400000;
+function diaNum(iso){
+  var p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+  return p ? Math.round(Date.UTC(Number(p[1]), Number(p[2]) - 1, Number(p[3])) / DIA) : null;
+}
+function isoDe(num){ return new Date(num * DIA).toISOString().slice(0, 10); }
+
+/* Km por dia, pelos registros do último ano (ou de todo o histórico, se o ano for pouco).
+   Pede 30 dias entre o primeiro e o último: menos que isso engana. */
+function ritmo(registros, hoje){
+  var h = diaNum(hoje), porDia = {};
+  (registros || []).forEach(function(r){
+    var d = diaNum(r.data);
+    if (d === null || d > h || n(r.km) <= 0) return;
+    porDia[d] = Math.max(porDia[d] || 0, n(r.km));
+  });
+  var pontos = Object.keys(porDia).map(function(d){ return { dia:Number(d), km:porDia[d] }; })
+    .sort(function(a,b){ return a.dia - b.dia; });
+  function calc(l){
+    if (l.length < 2) return null;
+    var a = l[0], b = l[l.length - 1], dias = b.dia - a.dia, km = b.km - a.km;
+    return dias >= 30 && km > 0 ? { kmDia: km / dias, ultimo: isoDe(b.dia) } : null;
+  }
+  return calc(pontos.filter(function(p){ return p.dia >= h - 365; })) || calc(pontos);
+}
+/* Data provável de rodar os km que faltam, contando do dia em que o odômetro foi lido. */
+function preverData(faltaKm, kmDia, lidoEm){
+  var d = diaNum(lidoEm);
+  if (d === null || !(kmDia > 0) || !(faltaKm > 0)) return "";
+  var dias = Math.round(faltaKm / kmDia);
+  return dias > 365 * 10 ? "" : isoDe(d + dias);
+}
+
 /* Divide um valor em n partes iguais em centavos; a sobra vai para as primeiras. */
 function ratear(valor, partes){
   var cent = Math.round(n(valor) * 100), base = Math.floor(cent / partes), sobra = cent - base * partes, out = [];
@@ -70,4 +104,4 @@ function ratear(valor, partes){
 /* Salto grande demais costuma ser um dígito a mais. */
 function saltoSuspeito(atual, novo){ return atual > 0 && novo - atual > 20000; }
 
-export { somaMeses, consumosDe, mediaDe, estimar, desfazerKm, aplicarKm, ratear, saltoSuspeito };
+export { somaMeses, consumosDe, mediaDe, estimar, desfazerKm, aplicarKm, ratear, ritmo, preverData, saltoSuspeito };
