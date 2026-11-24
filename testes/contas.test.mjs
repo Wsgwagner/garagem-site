@@ -124,3 +124,12 @@ test('etanol ou gasolina', () => {
   assert.equal(k.ultimoPreco([f(1, 10, 'Etanol', true, 40, '2026-02-01'), f(9, 10, 'Etanol', true, 50, '2026-01-01')], 'etanol'), 4);
   assert.equal(k.ultimoPreco([], 'gasolina'), null);
 });
+test('item do plano coberto por dianteiros e traseiros', () => {
+  const d = { km: 148000, proxKm: 158000 }, t = { km: 149642, proxKm: 159642 }, K = 'amortecedores';
+  const r = (o = {}) => ({ 'amortecedores dianteiros': d, 'amortecedores traseiros': t, ...o });
+  assert.equal(k.cobertoPorEixo(K, r()), true);
+  assert.equal(k.cobertoPorEixo(K, { 'amortecedores dianteiros': d }), false);
+  assert.equal(k.cobertoPorEixo(K, r({ 'amortecedores traseiros': { km: 1, proxKm: 0 } })), false);
+  assert.equal(k.cobertoPorEixo(K, r({ amortecedores: { km: 152000 } })), false);
+  assert.equal(k.cobertoPorEixo(K, r({ amortecedores: { km: 100000 } })), true);
+});

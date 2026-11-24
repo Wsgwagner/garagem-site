@@ -4,7 +4,7 @@
 
 import { veiculo } from './dados.js';
 import { num, chave, hoje, diasAte, somaMeses, fmtKm } from './util.js';
-import { consumosDe, mediaDe, estimar, ritmo, preverData } from './contas.js';
+import { consumosDe, mediaDe, estimar, cobertoPorEixo, ritmo, preverData } from './contas.js';
 
 function planoDoVeiculo(){
   var v = veiculo();
@@ -102,6 +102,7 @@ function alertas(){
     if (p.fonte === "semtroca") return;
     var k = chave(p.item);
     vistos[k] = true;
+    if (cobertoPorEixo(k, reg)) return;
     out.push(montar(p.item, p, reg[k] || null));
   });
   Object.keys(reg).forEach(function(k){

@@ -70,6 +70,15 @@ function mediaDe(cs){
   return l ? km / l : null;
 }
 
+/* "Amortecedores" do plano já está coberto se os dianteiros e os traseiros têm registro
+   com próxima troca: cada um vira o próprio alerta. reg é indexado pela chave do item. */
+function cobertoPorEixo(k, reg){
+  function um(eixo){ return reg[k + " " + eixo + "os"] || reg[k + " " + eixo + "as"] || null; }
+  var d = um("dianteir"), t = um("traseir"), m = reg[k];
+  if (!d || !t) return false;
+  return [d, t].every(function(x){ return (x.proxKm || x.proxData) && (!m || n(x.km) >= n(m.km)); });
+}
+
 /* Item sem registro: próxima troca provável e se já devia ter havido uma. Nesse caso
    não dá para afirmar que está em dia: o dono precisa confirmar. */
 function estimar(iv, km, ano, anoAtual){
@@ -205,4 +214,4 @@ function ratear(valor, partes){
 /* Salto grande demais costuma ser um dígito a mais. */
 function saltoSuspeito(atual, novo){ return atual > 0 && novo - atual > 20000; }
 
-export { somaMeses, consumosDe, consumosPorCombustivel, ultimoPreco, compararFlex, mediaDe, estimar, desfazerKm, aplicarKm, ratear, custos, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };
+export { somaMeses, consumosDe, consumosPorCombustivel, ultimoPreco, compararFlex, mediaDe, estimar, desfazerKm, aplicarKm, ratear, cobertoPorEixo, custos, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };
