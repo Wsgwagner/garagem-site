@@ -9,6 +9,7 @@ import { chave, uid } from '../util.js';
 
 var ROTULO_FONTE = {
   manual:   "Manual do fabricante",
+  revista:  "Publicado na revista O Mecânico",
   perfil:   "Intervalo típico",
   inspecao: "Inspeção do manual",
   oficina:  "Recomendação de oficina",

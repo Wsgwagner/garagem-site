@@ -17,7 +17,7 @@ function renderPlano(){
 
   var origem = fonteModelo(v.modeloId);
   document.getElementById("plano-origem").textContent = origem
-    ? "Intervalos conferidos em: " + origem + ". O que você ajustar fica marcado como seu."
+    ? "Fonte: " + origem + ". A coluna de origem mostra de onde vem cada prazo; confira no manual do seu ano. O que você ajustar fica marcado como seu."
     : "Plano montado pelo perfil do veículo, com os intervalos típicos dos manuais. Confira no manual do seu carro e ajuste o que estiver diferente — o app guarda a sua versão.";
 
   var linhas = v.plano.map(function(p){

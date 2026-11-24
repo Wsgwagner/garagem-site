@@ -1,5 +1,5 @@
 /* Garagem — service worker: faz o app abrir sem internet. */
-var CACHE = "garagem-v19";
+var CACHE = "garagem-v20";
 var ARQUIVOS = [
   "./",
   "./index.html",

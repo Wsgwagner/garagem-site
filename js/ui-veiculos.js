@@ -70,7 +70,7 @@ function ajudaModelo(){
   var id = document.getElementById("v-modelo-lib").value;
   var m = listaModelos().filter(function(x){ return x.id === id; })[0];
   document.getElementById("v-modelo-ajuda").textContent = m
-    ? m.detalhe + " — intervalos conferidos em: " + m.fonte
+    ? m.detalhe + " — fonte: " + m.fonte + ". Item sem prazo na fonte usa o intervalo típico; confira no manual do seu ano."
     : "Sem o modelo na lista, o plano é montado pelas respostas do perfil, com os intervalos típicos dos manuais. Você pode ajustar item a item depois.";
   // Um modelo conhecido já sabe parte do perfil.
   if (m && m.perfil){

@@ -89,6 +89,7 @@ function autoProxima(){
   }
   var iv = intervalo(p);
   var prefixo = p.fonte === "manual" ? "Manual do fabricante: a cada "
+              : p.fonte === "revista" ? "Publicado na revista O Mecânico (confira no manual): a cada "
               : p.fonte === "voce" ? "Intervalo definido por você: a cada "
               : p.fonte === "inspecao" ? "Inspeção prevista no manual: a cada "
               : "Sem prazo de fábrica — lembrete sugerido: a cada ";
