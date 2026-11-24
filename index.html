@@ -60,6 +60,7 @@
       <button class="tab" role="tab" id="tab-alertas" aria-selected="true" data-tab="alertas">Próximas trocas <span class="count" id="c-alertas"></span></button>
       <button class="tab" role="tab" id="tab-manut" aria-selected="false" data-tab="manut">Peças e serviços <span class="count" id="c-manut"></span></button>
       <button class="tab" role="tab" id="tab-abast" aria-selected="false" data-tab="abast">Abastecimentos <span class="count" id="c-abast"></span></button>
+      <button class="tab" role="tab" id="tab-docs" aria-selected="false" data-tab="docs">Documentos <span class="count" id="c-docs"></span></button>
       <button class="tab" role="tab" id="tab-plano" aria-selected="false" data-tab="plano">Plano de manutenção</button>
     </nav>
 
@@ -75,6 +76,7 @@
           <label for="uso-severo">Uso severo</label>
         </div>
       </div>
+      <div id="docs-alertas" class="stack"></div>
       <div id="alertas-list" class="stack"></div>
     </section>
 
@@ -101,6 +103,17 @@
         <button class="btn btn-primary" id="add-abast">+ Registrar abastecimento</button>
       </div>
       <div id="abast-list"></div>
+    </section>
+
+    <section class="panel" id="panel-docs" role="tabpanel" aria-labelledby="tab-docs" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>Documentos e despesas</h2>
+          <p class="hint">O aviso aparece 30 dias antes do vencimento. O que for pago entra nos gastos do ano.</p>
+        </div>
+        <button class="btn btn-primary" id="add-doc">+ Documento ou despesa</button>
+      </div>
+      <div id="docs-list" class="stack"></div>
     </section>
 
     <section class="panel" id="panel-plano" role="tabpanel" aria-labelledby="tab-plano" hidden>
@@ -270,6 +283,36 @@
       <button type="button" class="btn btn-ghost" id="m-delete" hidden>Excluir</button>
       <span class="spacer"></span>
       <button type="button" class="btn" id="m-cancel">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ================= documentos ================= -->
+<dialog id="dlg-doc">
+  <form method="dialog" id="form-doc">
+    <div class="dlg-head"><h2 id="dlg-doc-title">Novo documento ou despesa</h2></div>
+    <div class="dlg-body">
+      <div class="grid">
+        <div class="field"><label for="d-tipo">Tipo</label>
+          <select id="d-tipo"><option>IPVA</option><option>Licenciamento</option><option>Seguro</option><option>CNH</option><option>Multa</option><option>Financiamento</option><option>Outro</option></select>
+        </div>
+        <div class="field"><label for="d-desc">Descrição</label><input type="text" id="d-desc" placeholder="Ex.: cota única, seguradora"></div>
+        <div class="field"><label for="d-venc">Vencimento</label><input type="date" id="d-venc"></div>
+        <div class="field"><label for="d-valor">Valor (R$)</label><input type="number" id="d-valor" min="0" step="0.01" inputmode="decimal"></div>
+        <div class="field"><label for="d-repete">Repete</label>
+          <select id="d-repete"><option value="0">Não repete</option><option value="1">Todo mês</option><option value="6">A cada 6 meses</option><option value="12">Todo ano</option></select>
+        </div>
+        <div class="field" id="d-campo-pago" hidden><label for="d-pagoem">Pago ou resolvido em</label><input type="date" id="d-pagoem"></div>
+        <div class="field full check"><input type="checkbox" id="d-pago"><label for="d-pago">Já foi pago ou resolvido</label></div>
+        <div class="field full"><label for="d-obs">Observações</label><textarea id="d-obs" placeholder="Não precisa anotar números de documentos"></textarea></div>
+      </div>
+      <p class="helper" style="margin:8px 0 0">Se repetir, ao marcar como resolvido o app cria o próximo vencimento sozinho.</p>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn btn-ghost" id="d-excluir" hidden>Excluir</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="d-cancelar">Cancelar</button>
       <button type="submit" class="btn btn-primary">Salvar</button>
     </div>
   </form>

@@ -95,6 +95,30 @@ function preverData(faltaKm, kmDia, lidoEm){
   return dias > 365 * 10 ? "" : isoDe(d + dias);
 }
 
+/* ---------- documentos ---------- */
+function nivelDoc(d, hoje){
+  if (d.pago) return "pago";
+  var v = diaNum(d.vencimento), h = diaNum(hoje);
+  if (v === null) return "none";
+  return v < h ? "crit" : v - h <= 30 ? "warn" : "ok";
+}
+/* Soma o que foi pago; com ano, só o daquele ano. */
+function gastoDocs(docs, ano){
+  return (docs || []).reduce(function(s, d){
+    return s + (d.pago && (!ano || (d.pagoEm || "").slice(0, 4) === ano) ? n(d.valor) : 0);
+  }, 0);
+}
+/* O próximo de um documento que repete. O valor fica em branco: muda a cada ano. */
+function proximoDoc(d, id, existentes){
+  var venc = d.repete ? somaMeses(d.vencimento, d.repete) : "";
+  if (!venc) return null;
+  var ja = (existentes || []).some(function(x){
+    return x.id !== d.id && x.tipo === d.tipo && (x.descricao || "") === (d.descricao || "") && x.vencimento === venc;
+  });
+  return ja ? null : { id:id, tipo:d.tipo, descricao:d.descricao || "", vencimento:venc, valor:0,
+    repete:d.repete, pago:false, pagoEm:"", obs:"" };
+}
+
 /* Divide um valor em n partes iguais em centavos; a sobra vai para as primeiras. */
 function ratear(valor, partes){
   var cent = Math.round(n(valor) * 100), base = Math.floor(cent / partes), sobra = cent - base * partes, out = [];
@@ -104,4 +128,4 @@ function ratear(valor, partes){
 /* Salto grande demais costuma ser um dígito a mais. */
 function saltoSuspeito(atual, novo){ return atual > 0 && novo - atual > 20000; }
 
-export { somaMeses, consumosDe, mediaDe, estimar, desfazerKm, aplicarKm, ratear, ritmo, preverData, saltoSuspeito };
+export { somaMeses, consumosDe, mediaDe, estimar, desfazerKm, aplicarKm, ratear, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };

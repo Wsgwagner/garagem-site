@@ -7,6 +7,7 @@ import { alertas, consumos, consumoMedio, ritmoAtual, kmAtual, custoPorKm, texto
 import { renderVeiculo, abrirVeiculo } from './ui-veiculos.js';
 import { renderPlano } from './ui-plano.js';
 import { abrirManut, abrirAbast } from './ui-formularios.js';
+import { renderDocs, docsAlerta, gastoDocsDoAno } from './ui-docs.js';
 import { marcaArmazenamento } from './ui-dados.js';
 import { saltoSuspeito } from './contas.js';
 import { esc, num, fmtData, fmtKm, fmtBRL, fmtDec, totalManut, chave, hoje, diasAte, toast } from './util.js';
@@ -32,13 +33,14 @@ function render(){
 
   document.getElementById("c-manut").textContent = vAtivo().manut.length || "";
   document.getElementById("c-abast").textContent = vAtivo().abast.length || "";
-  var al = alertas(), pend = al.filter(function(a){ return a.nivel === "crit" || a.nivel === "warn"; }).length;
+  var al = alertas(), pend = al.filter(function(a){ return a.nivel === "crit" || a.nivel === "warn"; }).length + docsAlerta().length;
   document.getElementById("c-alertas").textContent = pend || "";
 
   renderTiles(al, km);
   renderAlertas(al);
   renderManut();
   renderAbast();
+  renderDocs();
   renderPlano();
   renderDatalists();
   marcaArmazenamento();
@@ -46,20 +48,21 @@ function render(){
 
 function renderTiles(al, km){
   var anoAtual = String(new Date().getFullYear());
-  var gastoAno = vAtivo().manut.reduce(function(s,m){ return s + ((m.data||"").slice(0,4) === anoAtual ? totalManut(m) : 0); }, 0);
-  var gastoTotal = vAtivo().manut.reduce(function(s,m){ return s + totalManut(m); }, 0);
+  var gastoAno = vAtivo().manut.reduce(function(s,m){ return s + ((m.data||"").slice(0,4) === anoAtual ? totalManut(m) : 0); }, 0) + gastoDocsDoAno(anoAtual);
+  var gastoTotal = vAtivo().manut.reduce(function(s,m){ return s + totalManut(m); }, 0) + gastoDocsDoAno();
+  var dv = docsAlerta();
   var cs = consumos();
   var media = consumoMedio();
   var ultimo = cs.length ? cs[cs.length-1].kmL : null;
-  var vencidos = al.filter(function(a){ return a.nivel === "crit"; }).length;
-  var perto = al.filter(function(a){ return a.nivel === "warn"; }).length;
+  var vencidos = al.filter(function(a){ return a.nivel === "crit"; }).length + dv.filter(function(x){ return x.nivel === "crit"; }).length;
+  var perto = al.filter(function(a){ return a.nivel === "warn"; }).length + dv.filter(function(x){ return x.nivel === "warn"; }).length;
 
   var cls = vencidos ? "tile alert-crit" : (perto ? "tile alert-warn" : "tile");
   var acompanhados = al.filter(function(a){ return a.nivel === "ok"; }).length;
   var confirmar = al.filter(function(a){ return a.nivel === "conf" || a.nivel === "none"; }).length;
-  var alertaValor = km ? (vencidos ? vencidos : (perto ? perto : 0)) : "—";
-  var alertaNota = !km ? "informe o odômetro para calcular"
-                 : vencidos ? (vencidos === 1 ? "item passou do ponto" : "itens passaram do ponto")
+  var alertaValor = vencidos || perto || (km ? 0 : "—");
+  var alertaNota = !km && !vencidos && !perto ? "informe o odômetro para calcular"
+                 : vencidos ? (vencidos === 1 ? "item vencido" : "itens vencidos")
                  : perto ? (perto === 1 ? "item chegando na hora" : "itens chegando na hora")
                  : acompanhados + " em dia" + (confirmar ? " · " + confirmar + " sem registro seu" : "");
 
@@ -257,7 +260,7 @@ function renderDatalists(){
 /* ---------- abas ---------- */
 function irPara(t){
   tab = t;
-  ["alertas","manut","abast","plano"].forEach(function(k){
+  ["alertas","manut","abast","docs","plano"].forEach(function(k){
     document.getElementById("tab-"+k).setAttribute("aria-selected", String(k === t));
     document.getElementById("panel-"+k).hidden = (k !== t);
   });

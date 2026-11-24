@@ -74,3 +74,21 @@ test('previsão de data', () => {
   assert.equal(k.preverData(0, 10, '2026-11-24'), '');
   assert.equal(k.preverData(1e9, 10, '2026-11-24'), '');
 });
+test('documentos: nível, gasto e próximo', () => {
+  const d = (vencimento, o = {}) => ({ id: 'x', tipo: 'IPVA', vencimento, valor: 100, repete: 12, ...o });
+  const h = '2026-11-24';
+  assert.equal(k.nivelDoc(d('2026-11-23'), h), 'crit');
+  assert.equal(k.nivelDoc(d('2026-11-24'), h), 'warn');
+  assert.equal(k.nivelDoc(d('2026-12-24'), h), 'warn');
+  assert.equal(k.nivelDoc(d('2026-12-25'), h), 'ok');
+  assert.equal(k.nivelDoc(d(''), h), 'none');
+  assert.equal(k.nivelDoc(d('2020-01-01', { pago: true }), h), 'pago');
+  const l = [d('', { pago: true, pagoEm: '2026-01-02' }), d('', { pago: true, pagoEm: '2025-01-02' }), d('')];
+  assert.equal(k.gastoDocs(l, '2026'), 100);
+  assert.equal(k.gastoDocs(l), 200);
+  assert.equal(k.gastoDocs(undefined), 0);
+  const p = k.proximoDoc(d('2026-01-31'), 'y', []);
+  assert.equal(p.vencimento, '2027-01-31'); assert.equal(p.pago, false); assert.equal(p.valor, 0);
+  assert.equal(k.proximoDoc(d('2026-01-31'), 'z', [p]), null);
+  assert.equal(k.proximoDoc(d('2026-01-31', { repete: 0 }), 'z', []), null);
+});

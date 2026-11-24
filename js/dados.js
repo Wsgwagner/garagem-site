@@ -186,10 +186,14 @@ function salvarPerfil(){
   v.atualizadoEm = hoje();
   cacheLocal(); notificar();
 }
+function listaDe(v, col){
+  if (col === "documentos") return v.docs || (v.docs = []); // carro antigo não tem a lista
+  return col === "manutencoes" ? v.manut : v.abast;
+}
 function gravar(col, obj){ return gravarVarios(col, [obj]); }
 function gravarVarios(col, objs){
   var v = veiculo(); if (!v) return;
-  var lista = col === "manutencoes" ? v.manut : v.abast;
+  var lista = listaDe(v, col);
   objs.forEach(function(obj){
     var i = -1, k;
     for (k = 0; k < lista.length; k++) if (lista[k].id === obj.id) i = k;
@@ -202,7 +206,7 @@ function gravarVarios(col, objs){
 }
 function apagar(col, id){
   var v = veiculo(); if (!v) return;
-  var lista = col === "manutencoes" ? v.manut : v.abast;
+  var lista = listaDe(v, col);
   for (var k = lista.length - 1; k >= 0; k--) if (lista[k].id === id) lista.splice(k, 1);
   cacheLocal(); notificar();
 }
@@ -246,7 +250,8 @@ function aplicarBackup(texto){
       state.veiculos.push(alvo);
       veiculosNovos++;
     }
-    ["manut","abast"].forEach(function(col){
+    ["manut","abast","docs"].forEach(function(col){
+      if (vb[col] && !alvo[col]) alvo[col] = [];
       (vb[col] || []).forEach(function(r){
         if (!r || !r.id) return;
         var achou = -1, i;

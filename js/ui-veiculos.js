@@ -140,7 +140,7 @@ form.addEventListener("submit", function(e){
 document.getElementById("v-cancelar").addEventListener("click", function(){ dlg.close(); });
 document.getElementById("v-excluir").addEventListener("click", function(){
   if (!editando) return;
-  var n = editando.manut.length + editando.abast.length;
+  var n = editando.manut.length + editando.abast.length + (editando.docs || []).length;
   if (confirm("Excluir “" + editando.apelido + "” e os " + n + " registro(s) dele? Isso não tem volta — salve um backup antes se tiver dúvida.")){
     excluirVeiculo(editando.id);
     dlg.close();

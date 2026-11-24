@@ -62,7 +62,7 @@ function juntarVeiculo(antes, meu, outro){
   antes = antes || {};
   var v = {};
   Object.keys(Object.assign({}, outro, meu)).forEach(function(c){
-    v[c] = (c === "manut" || c === "abast" || c === "plano")
+    v[c] = (c === "manut" || c === "abast" || c === "plano" || c === "docs")
       ? juntarLista(antes[c], meu[c], outro[c], escolher)
       : escolher(antes[c], meu[c], outro[c]);
   });
@@ -111,7 +111,8 @@ function adotar(local, remoto){
     abast: trocar(local.abast, remoto.abast, function(x, y){
       return x.data === y.data && n(x.km) === n(y.km) && Math.abs(n(x.litros) - n(y.litros)) < 0.01; }),
     plano: trocar(local.plano, remoto.plano, function(x, y){ return chave(x.item) === chave(y.item); })
-  });
+  }, local.docs ? { docs: trocar(local.docs, remoto.docs, function(x, y){
+      return x.tipo === y.tipo && x.vencimento === y.vencimento && chave(x.descricao) === chave(y.descricao); }) } : {});
 }
 
 export { canonico, igual, juntarVeiculos, paresParecidos, adotar };

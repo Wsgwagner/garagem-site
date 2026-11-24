@@ -107,3 +107,14 @@ test('falha ao gravar no aparelho não avança a base', async () => {
   pc.aplicar = ok; await s(pc, n);
   assert.deepEqual(ids(pc), ['1', '2']); assert.equal(n.doc[0].manut.length, 2);
 });
+
+test('documentos criados nos dois aparelhos ficam nos dois', async () => {
+  const { n, cel, pc } = await par([m('1', 'Óleo')]);
+  cel.v[0].docs = [{ id: 'd1', tipo: 'IPVA' }]; pc.v[0].docs = [{ id: 'd2', tipo: 'Seguro' }];
+  await s(cel, n); await s(pc, n); await s(cel, n);
+  assert.deepEqual(cel.v[0].docs.map(x => x.id).sort(), ['d1', 'd2']);
+  assert.ok(igual(cel.v, pc.v));
+  pc.v[0].docs = pc.v[0].docs.filter(x => x.id !== 'd1');
+  await s(pc, n); await s(cel, n);
+  assert.deepEqual(cel.v[0].docs.map(x => x.id), ['d2']);
+});
