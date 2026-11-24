@@ -81,3 +81,10 @@ inventado com cara de oficial.
   aceita `;` ou `,` como separador e reconhece as colunas pelo cabeçalho.
 - **Gerar PDF do histórico** usa a impressão do navegador com uma folha `@media print`,
   sem biblioteca externa.
+
+## Nuvem (opcional)
+
+Login com Google e cópia no Firestore, para ter os mesmos dados em vários aparelhos.
+Fica desligada enquanto `js/nuvem-config.js` estiver vazio. As regras de acesso estão em
+`firestore.rules` e precisam ser publicadas no console do Firebase. A junção dos dados
+tem testes: `node --test testes/sincronia.test.mjs`.

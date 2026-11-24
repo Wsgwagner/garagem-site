@@ -1,6 +1,8 @@
 /* util.js
  Formatação, datas, números e download de arquivos. Nada aqui conhece a tela nem os dados. */
 
+import { chave } from './texto.js';
+
 function uid(){
   try { if (crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g,""); } catch(e){}
   return "r" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -28,12 +30,6 @@ function fmtKm(n){ return Math.round(num(n)).toLocaleString("pt-BR"); }
 function fmtBRL(n){ return num(n).toLocaleString("pt-BR",{style:"currency",currency:"BRL"}); }
 function fmtDec(n,d){ return num(n).toLocaleString("pt-BR",{minimumFractionDigits:d||1,maximumFractionDigits:d||1}); }
 function totalManut(m){ return num(m.custoPecas) + num(m.custoMaoObra); }
-/* Sem acento e sem maiúscula: "oleo do motor" é o mesmo item que "Óleo do motor". */
-function chave(item){
-  return String(item||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-    .trim().toLowerCase().replace(/\s+/g," ");
-}
-
 var toastEl = document.getElementById("toast"), toastT = null;
 function toast(msg){
   toastEl.textContent = msg; toastEl.classList.add("show");

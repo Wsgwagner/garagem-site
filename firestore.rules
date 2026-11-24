@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Cada conta Google só lê e grava a própria garagem. O resto é negado.
+    match /garagens/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['texto', 'em'])
+        && request.resource.data.texto is string
+        && request.resource.data.em == request.time;
+    }
+  }
+}

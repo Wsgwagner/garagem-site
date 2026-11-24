@@ -5,9 +5,11 @@
    o seu histórico e os seus abastecimentos. */
 
 import { num, chave, hoje, fmtData, baixarArquivo, toast, uid } from './util.js';
+import { juntarVeiculos } from './juncao.js';
 import { montarPlano } from './planos/montar.js';
 
 var CHAVE = "garagem-v2";
+var CHAVE_BASE = CHAVE + "-nuvem";
 var CHAVE_ANTIGA = "garagem-livina-v1";
 
 var state = { versao:2, veiculoAtivo:"", veiculos:[] };
@@ -74,41 +76,6 @@ function salvarVeiculo(campos){
    de passar por cima dos registros dela. */
 var base = "";
 
-function porId(lista){
-  var m = {};
-  (Array.isArray(lista) ? lista : []).forEach(function(x){ if (x && x.id) m[x.id] = x; });
-  return m;
-}
-function igual(a, b){ return JSON.stringify(a) === JSON.stringify(b); }
-
-/* Três versões de uma lista: como era (antes), a desta janela e a da outra. */
-function juntarLista(antes, minha, outra, juntarItem){
-  var a = porId(antes), m = porId(minha), o = porId(outra), out = [];
-  (minha || []).forEach(function(x){
-    if (!x) return;
-    if (!o[x.id]){
-      // A outra janela excluiu: sai, a não ser que tenha sido criado ou mudado aqui.
-      if (!a[x.id] || !igual(a[x.id], x)) out.push(x);
-    } else out.push(juntarItem(a[x.id], x, o[x.id]));
-  });
-  (outra || []).forEach(function(x){
-    if (!x || m[x.id]) return;
-    if (!a[x.id] || !igual(a[x.id], x)) out.push(x);
-  });
-  return out;
-}
-/* Quem mudou desde a versão anterior vale; se os dois mudaram, vale esta janela. */
-function escolher(antes, meu, outro){ return antes !== undefined && igual(antes, meu) ? outro : meu; }
-function juntarVeiculo(antes, meu, outro){
-  antes = antes || {};
-  var v = {};
-  Object.keys(Object.assign({}, outro, meu)).forEach(function(c){
-    v[c] = (c === "manut" || c === "abast" || c === "plano")
-      ? juntarLista(antes[c], meu[c], outro[c], escolher)
-      : escolher(antes[c], meu[c], outro[c]);
-  });
-  return v;
-}
 function lerTexto(bruto){
   try {
     var d = JSON.parse(bruto);
@@ -121,7 +88,7 @@ function cacheLocal(){
     var bruto = localStorage.getItem(CHAVE);
     if (bruto && bruto !== base){
       var outro = lerTexto(bruto);
-      if (outro) state.veiculos = juntarLista((lerTexto(base) || {}).veiculos, state.veiculos, outro.veiculos, juntarVeiculo);
+      if (outro) state.veiculos = juntarVeiculos((lerTexto(base) || {}).veiculos, state.veiculos, outro.veiculos);
     }
     var texto = JSON.stringify(state);
     localStorage.setItem(CHAVE, texto);
@@ -160,6 +127,8 @@ function lerLocal(){
       // Gravação ilegível: guarda como está, para não perder, e volta à última cópia boa.
       try { localStorage.setItem(CHAVE + "-ilegivel-" + Date.now(), bruto); } catch(e){}
       try { d = lerTexto(localStorage.getItem(CHAVE + "-copia")); } catch(e){}
+      // A cópia é mais velha que a nuvem: sem isto, o que falta nela pareceria excluído.
+      try { localStorage.removeItem(CHAVE_BASE); } catch(e){}
       toast(d ? "Os dados não abriram; voltei à última cópia boa." : "Os dados não abriram. Restaure um backup.");
     }
     if (d){
@@ -179,6 +148,15 @@ function lerLocal(){
 
   // Pede ao navegador para não limpar estes dados quando faltar espaço.
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function(){});
+}
+
+/* Usados pela nuvem. */
+function lerVeiculos(){ sincronizar(); return state.veiculos; }
+function aplicarVeiculos(lista){
+  state.veiculos = lista;
+  var ok = cacheLocal();
+  notificar();
+  return ok;
 }
 
 /* O app antigo guardava um veículo só, numa outra chave. Traz tudo para cá. */
@@ -403,6 +381,7 @@ function importarCSV(texto){
 }
 
 export {
+  CHAVE_BASE, lerVeiculos, aplicarVeiculos,
   state, armazenamentoOk, aoMudar, notificar, cacheLocal, lerLocal,
   veiculo, criarVeiculo, selecionarVeiculo, excluirVeiculo, salvarVeiculo,
   salvarPerfil, gravar, apagar, fazerBackup, aplicarBackup, importarCSV

@@ -1,5 +1,5 @@
 /* Garagem da Livina — service worker: faz o app abrir sem internet. */
-var CACHE = "garagem-v6";
+var CACHE = "garagem-v7";
 var ARQUIVOS = [
   "./",
   "./index.html",
@@ -14,6 +14,11 @@ var ARQUIVOS = [
   "./js/dados.js",
   "./js/calculos.js",
   "./js/util.js",
+  "./js/texto.js",
+  "./js/juncao.js",
+  "./js/sincronia.js",
+  "./js/nuvem.js",
+  "./js/nuvem-config.js",
   "./js/planos/base.js",
   "./js/planos/modelos.js",
   "./js/planos/montar.js",
@@ -73,7 +78,10 @@ self.addEventListener("fetch", function(e){
     return;
   }
 
-  // Fontes externas: cache primeiro, rede depois.
+  // Login e banco da nuvem falam direto com a rede; só fontes e biblioteca ficam guardadas.
+  if (!/^https:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com|www\.gstatic\.com)\//.test(req.url)) return;
+
+  // Fontes e biblioteca externas: cache primeiro, rede depois.
   e.respondWith(
     caches.match(req).then(function(cacheado){
       if (cacheado) return cacheado;

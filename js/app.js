@@ -7,6 +7,7 @@ import { render } from './ui.js';
 import { abrirVeiculo } from './ui-veiculos.js';
 import './ui-plano.js';
 import './ui-dados.js';
+import './nuvem.js';
 
 aoMudar(render);
 
