@@ -9,6 +9,7 @@ import { renderPlano } from './ui-plano.js';
 import { abrirManut, abrirAbast } from './ui-formularios.js';
 import { renderDocs, docsAlerta, gastoDocsDoAno } from './ui-docs.js';
 import { renderCustos } from './ui-custos.js';
+import { renderFlex } from './ui-flex.js';
 import { marcaArmazenamento } from './ui-dados.js';
 import { saltoSuspeito } from './contas.js';
 import { esc, num, fmtData, fmtKm, fmtBRL, fmtDec, totalManut, chave, hoje, diasAte, toast } from './util.js';
@@ -41,6 +42,7 @@ function render(){
   renderAlertas(al);
   renderManut();
   renderAbast();
+  renderFlex();
   renderDocs();
   renderCustos();
   renderPlano();

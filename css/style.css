@@ -289,6 +289,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 .cat-trilho i{display:block;height:14px;min-width:2px;border-radius:0 4px 4px 0}
 @media (max-width:620px){.mes.par{visibility:hidden}.cat-linha{grid-template-columns:104px 1fr auto;font-size:13px}}
 
+.flex-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px}
+.flex-box h3{font-size:15px;margin:0 0 10px}
+.flex-box p{margin:8px 0 0}
+.flex-resposta{font-size:15px}
+
 #docs-alertas:not(:empty){margin-bottom:14px}
 
 /* ---------- footer ---------- */

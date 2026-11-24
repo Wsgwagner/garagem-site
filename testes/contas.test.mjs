@@ -107,3 +107,20 @@ test('custo total: meses, categorias, sem valor e por km', () => {
   assert.equal(c.porKm, 400 / 2000);
   assert.equal(k.custos({}, '2026-01-31').meses[0].mes, '2025-02');
 });
+test('etanol ou gasolina', () => {
+  const f = (km, litros, combustivel, cheio = true, valor = 0, data = '2026-01-01') => ({ id: 'f' + km, km, litros, combustivel, cheio, valor, data });
+  const ab = [f(1000, 40, 'Gasolina'), f(1400, 40, 'Gasolina aditivada'), f(1700, 40, 'Etanol'), f(1980, 40, 'Etanol'),
+    f(2100, 10, 'Gasolina', false), f(2300, 30, 'Etanol')];
+  const c = k.consumosPorCombustivel(ab);
+  assert.deepEqual(c.gasolina, { kmL: 10, trechos: 1 });
+  assert.deepEqual(c.etanol, { kmL: 7, trechos: 1 });
+  assert.equal(k.compararFlex(c, 4, 6).melhor, 'etanol');
+  assert.equal(k.compararFlex(c, 5, 6).melhor, 'gasolina');
+  assert.equal(k.compararFlex(c, 4.2, 6).melhor, 'igual');
+  assert.ok(Math.abs(k.compararFlex(c, 3.5, 6).economia100 - 10) < 1e-9);
+  const v = k.compararFlex(k.consumosPorCombustivel([]), 4, 6);
+  assert.equal(v.real, false); assert.equal(v.limite, 0.7); assert.equal(v.economia100, 0);
+  assert.equal(k.compararFlex(c, 0, 6).preco, false);
+  assert.equal(k.ultimoPreco([f(1, 10, 'Etanol', true, 40, '2026-02-01'), f(9, 10, 'Etanol', true, 50, '2026-01-01')], 'etanol'), 4);
+  assert.equal(k.ultimoPreco([], 'gasolina'), null);
+});

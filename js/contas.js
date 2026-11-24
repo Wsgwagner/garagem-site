@@ -20,15 +20,48 @@ function consumosDe(abast){
     var x = a.data || "", y = b.data || "";
     return n(a.km) - n(b.km) || (x < y ? -1 : x > y ? 1 : 0);
   });
-  var out = [], cheio = null, litros = 0, falta = false;
+  var out = [], cheio = null, litros = 0, falta = false, tipos = [];
   lista.forEach(function(a){
     if (n(a.litros) > 0) litros += n(a.litros); else falta = true;
+    tipos.push(tipoComb(a.combustivel));
     if (!a.cheio) return;
     var rodados = cheio ? n(a.km) - n(cheio.km) : 0;
-    if (rodados > 0 && !falta) out.push({ id:a.id, kmRodados:rodados, litros:litros, kmL:rodados / litros });
-    cheio = a; litros = 0; falta = false;
+    if (rodados > 0 && !falta) out.push({ id:a.id, kmRodados:rodados, litros:litros, kmL:rodados / litros,
+      tipo: tipos.every(function(t){ return t === tipos[0]; }) ? tipos[0] : "" });
+    cheio = a; litros = 0; falta = false; tipos = [tipoComb(a.combustivel)];
   });
   return out;
+}
+function tipoComb(nome){
+  return /^etanol/i.test(nome || "") ? "etanol" : /^gasolina/i.test(nome || "") ? "gasolina" : "";
+}
+/* Só trechos em que o tanque de antes, os parciais e o de depois são do mesmo combustível. */
+function consumosPorCombustivel(abast){
+  var cs = consumosDe(abast);
+  function de(t){
+    var l = cs.filter(function(c){ return c.tipo === t; });
+    return l.length ? { kmL: mediaDe(l), trechos: l.length } : null;
+  }
+  return { etanol: de("etanol"), gasolina: de("gasolina") };
+}
+/* Preço por litro do abastecimento mais recente desse combustível. */
+function ultimoPreco(abast, tipo){
+  var u = null;
+  (abast || []).forEach(function(a){
+    if (tipoComb(a.combustivel) !== tipo || !(n(a.litros) > 0) || !(n(a.valor) > 0)) return;
+    if (!u || (a.data || "") > (u.data || "") || ((a.data || "") === (u.data || "") && n(a.km) > n(u.km))) u = a;
+  });
+  return u ? n(u.valor) / n(u.litros) : null;
+}
+/* Sem medição dos dois, usa a regra geral: etanol até 70% do preço da gasolina. */
+function compararFlex(c, precoE, precoG){
+  var real = !!(c.etanol && c.gasolina), limite = real ? c.etanol.kmL / c.gasolina.kmL : 0.7;
+  var r = { real:real, limite:limite, preco: precoE > 0 && precoG > 0, melhor:"", relacao:0, economia100:0 };
+  if (!r.preco) return r;
+  r.relacao = precoE / precoG;
+  r.melhor = Math.abs(r.relacao / limite - 1) < 0.01 ? "igual" : r.relacao < limite ? "etanol" : "gasolina";
+  if (real) r.economia100 = Math.abs(precoE / c.etanol.kmL - precoG / c.gasolina.kmL) * 100;
+  return r;
 }
 /* Média de verdade: todos os km sobre todos os litros. */
 function mediaDe(cs){
@@ -172,4 +205,4 @@ function ratear(valor, partes){
 /* Salto grande demais costuma ser um dígito a mais. */
 function saltoSuspeito(atual, novo){ return atual > 0 && novo - atual > 20000; }
 
-export { somaMeses, consumosDe, mediaDe, estimar, desfazerKm, aplicarKm, ratear, custos, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };
+export { somaMeses, consumosDe, consumosPorCombustivel, ultimoPreco, compararFlex, mediaDe, estimar, desfazerKm, aplicarKm, ratear, custos, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };
