@@ -8,6 +8,16 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['texto', 'em'])
         && request.resource.data.texto is string
         && request.resource.data.em == request.time;
+
+      // Fotos das notas: uma por documento, só da própria conta. Não dá para listar.
+      match /fotos/{foto} {
+        allow get, delete: if request.auth != null && request.auth.uid == uid;
+        allow create, update: if request.auth != null && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['dados', 'em'])
+          && request.resource.data.dados is string
+          && request.resource.data.dados.size() < 300000
+          && request.resource.data.em == request.time;
+      }
     }
   }
 }

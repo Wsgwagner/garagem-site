@@ -4,6 +4,7 @@
 
 import { veiculo, gravar, apagar } from './dados.js';
 import { intervalo, textoIntervalo, kmAtual } from './calculos.js';
+import { abrirFotos, valorFotos, fotosOcupadas, confirmarFotos, apagarFotos } from './fotos.js';
 import { aplicarKm, desfazerKm, saltoSuspeito } from './contas.js';
 import { chave, num, hoje, fmtData, fmtKm, somaMeses, dateVal, toast, uid } from './util.js';
 
@@ -70,6 +71,7 @@ function abrirManut(id, itemSugerido){
   document.getElementById("m-proxkm").value = m.proxKm ? m.proxKm : "";
   document.getElementById("m-proxdata").value = m.proxData || "";
   if (editM) proxTocado = true;
+  abrirFotos(m.fotos);
   autoProxima();
   dlgM.showModal();
   document.getElementById(itemSugerido || editM ? "m-km" : "m-item").focus();
@@ -86,6 +88,7 @@ formM.addEventListener("submit", function(e){
   e.preventDefault();
   var item = document.getElementById("m-item").value.trim();
   if (!item) return;
+  if (fotosOcupadas()){ toast("Espere a foto terminar de carregar"); return; }
   var obj = {
     id: editM ? editM.id : uid(),
     data: document.getElementById("m-data").value || hoje(),
@@ -99,6 +102,7 @@ formM.addEventListener("submit", function(e){
     proxKm: document.getElementById("m-proxkm").value ? Math.round(num(document.getElementById("m-proxkm").value)) : 0,
     proxData: document.getElementById("m-proxdata").value || ""
   };
+  if (valorFotos().length) obj.fotos = valorFotos();
   if (!kmConfirmado(obj.km)) return;
   acertarKm(editM, obj);
   var ok = gravar("manutencoes", obj);
@@ -107,13 +111,14 @@ formM.addEventListener("submit", function(e){
     alert("ATENÇÃO: este navegador não conseguiu salvar. Use “Salvar backup” antes de fechar o app.");
     return;
   }
+  confirmarFotos();
   toast(editM ? "Registro atualizado" : "Serviço registrado");
 });
 document.getElementById("m-cancel").addEventListener("click", function(){ dlgM.close(); });
 document.getElementById("m-delete").addEventListener("click", function(){
   if (!editM) return;
   if (confirm("Excluir “" + editM.item + "” de " + fmtData(editM.data) + "?")){
-    desfazerKm(veiculo(), editM); apagar("manutencoes", editM.id); dlgM.close(); toast("Registro excluído");
+    desfazerKm(veiculo(), editM); apagar("manutencoes", editM.id); apagarFotos(editM.fotos); dlgM.close(); toast("Registro excluído");
   }
 });
 document.getElementById("quick-km").addEventListener("click", function(e){

@@ -202,7 +202,8 @@ function cardManut(m){
       '<div class="title-row"><h3>'+esc(m.item)+'</h3>'+(m.categoria ? '<span class="pill cat">'+esc(m.categoria)+'</span>' : "")+'</div>'+
       '<div class="meta"><span class="mono">'+fmtData(m.data)+'</span><span class="mono">'+fmtKm(m.km)+' km</span>'+
         (m.oficina ? '<span>'+esc(m.oficina)+'</span>' : "")+
-        (prox.length ? '<span>'+esc(prox.join(" "))+'</span>' : "")+'</div>'+
+        (prox.length ? '<span>'+esc(prox.join(" "))+'</span>' : "")+
+        (m.fotos && m.fotos.length ? '<span>'+m.fotos.length+(m.fotos.length === 1 ? ' foto' : ' fotos')+'</span>' : "")+'</div>'+
       (m.obs ? '<div class="obs">'+esc(m.obs)+'</div>' : "")+
     '</div>'+
     '<div class="right-col">'+

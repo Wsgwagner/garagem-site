@@ -24,6 +24,17 @@ function mostrar(texto){
   btnSair.hidden = !usuario;
 }
 
+/* ---------- fotos das notas (usado por fotos.js) ---------- */
+var entradas = [];
+function docFoto(id){ return F.doc(db, "garagens", usuario.uid, "fotos", id); }
+var fotoNuvem = {
+  pronto: function(){ return !!usuario && navigator.onLine; },
+  aoEntrar: function(fn){ entradas.push(fn); },
+  ler: async function(id){ var d = await F.getDoc(docFoto(id)); return d.exists() ? d.data().dados : null; },
+  gravar: function(id, dados){ return F.setDoc(docFoto(id), { dados: dados, em: F.serverTimestamp() }); },
+  apagar: function(id){ return F.deleteDoc(docFoto(id)); }
+};
+
 /* ---------- lado do aparelho ---------- */
 function baseGuardada(){
   try { return JSON.parse(localStorage.getItem(CHAVE_BASE)); } catch(e){ return null; }
@@ -150,6 +161,7 @@ async function entrou(u){
   usuario = u;
   await forcar();
   if (minha !== sessao) return;
+  entradas.forEach(function(fn){ fn(); });
   parar = F.onSnapshot(documento(u.uid), function(f){ chegou(u.uid, f); }, function(e){ console.warn("nuvem", e); });
 }
 function saiu(){
@@ -200,3 +212,5 @@ if (FIREBASE.apiKey && caixa){
   document.addEventListener("visibilitychange", function(){ if (!document.hidden) agendar(); });
   carregar();
 }
+
+export { fotoNuvem };

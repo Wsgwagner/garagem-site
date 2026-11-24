@@ -2,6 +2,7 @@
    Barra de veículos no topo e a janela de cadastro/edição.
    É aqui que o perfil do carro vira um plano de manutenção. */
 
+import { apagarFotos } from './fotos.js';
 import { state, veiculo, criarVeiculo, selecionarVeiculo, excluirVeiculo, salvarVeiculo } from './dados.js';
 import { PERGUNTAS_PERFIL } from './planos/base.js';
 import { listaModelos, montarPlano, reconstruirPlano } from './planos/montar.js';
@@ -142,7 +143,10 @@ document.getElementById("v-excluir").addEventListener("click", function(){
   if (!editando) return;
   var n = editando.manut.length + editando.abast.length + (editando.docs || []).length;
   if (confirm("Excluir “" + editando.apelido + "” e os " + n + " registro(s) dele? Isso não tem volta — salve um backup antes se tiver dúvida.")){
+    var fotos = [];
+    editando.manut.forEach(function(m){ fotos = fotos.concat(m.fotos || []); });
     excluirVeiculo(editando.id);
+    apagarFotos(fotos);
     dlg.close();
     toast("Veículo excluído");
   }
