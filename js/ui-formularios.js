@@ -2,9 +2,10 @@
    As duas janelas de registro: troca/serviço e abastecimento.
    A próxima troca é sugerida pelo plano do veículo ativo. */
 
-import { veiculo, gravar, apagar, cacheLocal } from './dados.js';
+import { veiculo, gravar, apagar } from './dados.js';
 import { intervalo, textoIntervalo, kmAtual } from './calculos.js';
-import { chave, num, hoje, fmtData, somaMeses, dateVal, toast, uid } from './util.js';
+import { aplicarKm, desfazerKm, saltoSuspeito } from './contas.js';
+import { chave, num, hoje, fmtData, fmtKm, somaMeses, dateVal, toast, uid } from './util.js';
 
 /* Acha no plano do veículo o item com esse nome. */
 function itemDoPlano(nome){
@@ -13,6 +14,16 @@ function itemDoPlano(nome){
   var achou = null;
   v.plano.forEach(function(p){ if (chave(p.item) === chave(nome)) achou = p; });
   return achou;
+}
+
+/* Dígito a mais é o erro mais comum: pergunta antes de aceitar um salto grande. */
+function kmConfirmado(km){
+  var atual = kmAtual();
+  return !saltoSuspeito(atual, km) ||
+    confirm("O odômetro vai de " + fmtKm(atual) + " para " + fmtKm(km) + " km. Está certo?");
+}
+function acertarKm(antigo, obj){
+  if (aplicarKm(veiculo(), antigo, obj)) veiculo().atualizadoEm = hoje();
 }
 
 var dlgM = document.getElementById("dlg-manut"), formM = document.getElementById("form-manut"), editM = null, proxTocado = false;
@@ -27,7 +38,8 @@ function autoProxima(){
     return;
   }
   var iv = intervalo(p);
-  var prefixo = p.fonte === "manual" ? "Manual da Nissan: a cada "
+  var prefixo = p.fonte === "manual" ? "Manual do fabricante: a cada "
+              : p.fonte === "voce" ? "Intervalo definido por você: a cada "
               : p.fonte === "inspecao" ? "Inspeção prevista no manual: a cada "
               : "Sem prazo de fábrica — lembrete sugerido: a cada ";
   nota.textContent = prefixo + textoIntervalo(p) +
@@ -87,7 +99,8 @@ formM.addEventListener("submit", function(e){
     proxKm: document.getElementById("m-proxkm").value ? Math.round(num(document.getElementById("m-proxkm").value)) : 0,
     proxData: document.getElementById("m-proxdata").value || ""
   };
-  if (obj.km > num((veiculo()||{}).kmAtual)){ veiculo().kmAtual = obj.km; veiculo().atualizadoEm = hoje(); cacheLocal(); }
+  if (!kmConfirmado(obj.km)) return;
+  acertarKm(editM, obj);
   var ok = gravar("manutencoes", obj);
   dlgM.close();
   if (!ok) {
@@ -100,7 +113,7 @@ document.getElementById("m-cancel").addEventListener("click", function(){ dlgM.c
 document.getElementById("m-delete").addEventListener("click", function(){
   if (!editM) return;
   if (confirm("Excluir “" + editM.item + "” de " + fmtData(editM.data) + "?")){
-    apagar("manutencoes", editM.id); dlgM.close(); toast("Registro excluído");
+    desfazerKm(veiculo(), editM); apagar("manutencoes", editM.id); dlgM.close(); toast("Registro excluído");
   }
 });
 document.getElementById("quick-km").addEventListener("click", function(e){
@@ -146,7 +159,8 @@ formA.addEventListener("submit", function(e){
     posto: document.getElementById("a-posto").value.trim(),
     cheio: document.getElementById("a-cheio").checked
   };
-  if (obj.km > num((veiculo()||{}).kmAtual)){ veiculo().kmAtual = obj.km; veiculo().atualizadoEm = hoje(); cacheLocal(); }
+  if (!kmConfirmado(obj.km)) return;
+  acertarKm(editA, obj);
   var ok = gravar("abastecimentos", obj);
   dlgA.close();
   if (!ok) {
@@ -159,7 +173,7 @@ document.getElementById("a-cancel").addEventListener("click", function(){ dlgA.c
 document.getElementById("a-delete").addEventListener("click", function(){
   if (!editA) return;
   if (confirm("Excluir o abastecimento de " + fmtData(editA.data) + "?")){
-    apagar("abastecimentos", editA.id); dlgA.close(); toast("Abastecimento excluído");
+    desfazerKm(veiculo(), editA); apagar("abastecimentos", editA.id); dlgA.close(); toast("Abastecimento excluído");
   }
 });
 

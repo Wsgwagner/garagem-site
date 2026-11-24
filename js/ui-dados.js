@@ -3,7 +3,7 @@
    Também monta o relatório que vira PDF na impressão. */
 
 import { veiculo, armazenamentoOk, fazerBackup, aplicarBackup, importarCSV } from './dados.js';
-import { alertas, consumos, kmAtual, custoPorKm } from './calculos.js';
+import { alertas, consumos, consumoMedio, kmAtual, custoPorKm } from './calculos.js';
 import { esc, num, hoje, fmtData, fmtKm, fmtBRL, fmtDec, totalManut, toast, baixarArquivo } from './util.js';
 /* Atalho: o veículo ativo, ou um vazio para a tela não quebrar. */
 function vAtivo(){ return veiculo() || { manut:[], abast:[], apelido:"", plano:[] }; }
@@ -106,7 +106,7 @@ function montarRelatorio(){
   var total = lista.reduce(function(s,m){ return s + totalManut(m); }, 0);
   var al = alertas().filter(function(a){ return a.nivel === "crit" || a.nivel === "warn"; });
   var cs = consumos();
-  var media = cs.length ? cs.reduce(function(s,c){ return s + c.kmL; },0)/cs.length : null;
+  var media = consumoMedio();
   var totalL = 0, totalComb = 0;
   vAtivo().abast.forEach(function(a){ totalL += num(a.litros); totalComb += num(a.valor); });
 
@@ -166,8 +166,8 @@ function montarRelatorio(){
     h += '</tbody></table>';
   }
 
-  h += '<div class="rodape">Documento gerado pela Garagem da Livina a partir dos registros do proprietário. '+
-       'Os intervalos de manutenção citados seguem o Manual de Garantia e Manutenção da Nissan para veículos flex, em uso normal.</div>';
+  h += '<div class="rodape">Documento gerado pelo app Garagem a partir dos registros do proprietário. '+
+       (al.length ? 'As pendências seguem o plano de manutenção deste veículo no app; sem registro anterior, o alvo é uma estimativa.' : '')+'</div>';
   document.getElementById("relatorio").innerHTML = h;
 }
 document.getElementById("gerar-pdf").addEventListener("click", function(){

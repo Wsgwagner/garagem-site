@@ -3,11 +3,12 @@
    abas e odômetro. Chama os outros módulos de tela para as partes deles. */
 
 import { state, veiculo, salvarPerfil, cacheLocal } from './dados.js';
-import { alertas, consumos, kmAtual, custoPorKm, textoIntervalo } from './calculos.js';
+import { alertas, consumos, consumoMedio, kmAtual, custoPorKm, textoIntervalo } from './calculos.js';
 import { renderVeiculo, abrirVeiculo } from './ui-veiculos.js';
 import { renderPlano } from './ui-plano.js';
 import { abrirManut, abrirAbast } from './ui-formularios.js';
 import { marcaArmazenamento } from './ui-dados.js';
+import { saltoSuspeito } from './contas.js';
 import { esc, num, fmtData, fmtKm, fmtBRL, fmtDec, totalManut, chave, toast } from './util.js';
 
 var tab = "alertas", manutView = "hist";
@@ -48,18 +49,19 @@ function renderTiles(al, km){
   var gastoAno = vAtivo().manut.reduce(function(s,m){ return s + ((m.data||"").slice(0,4) === anoAtual ? totalManut(m) : 0); }, 0);
   var gastoTotal = vAtivo().manut.reduce(function(s,m){ return s + totalManut(m); }, 0);
   var cs = consumos();
-  var media = cs.length ? cs.reduce(function(s,c){ return s + c.kmL; },0) / cs.length : null;
+  var media = consumoMedio();
   var ultimo = cs.length ? cs[cs.length-1].kmL : null;
   var vencidos = al.filter(function(a){ return a.nivel === "crit"; }).length;
   var perto = al.filter(function(a){ return a.nivel === "warn"; }).length;
 
   var cls = vencidos ? "tile alert-crit" : (perto ? "tile alert-warn" : "tile");
-  var acompanhados = al.filter(function(a){ return a.nivel !== "none"; }).length;
+  var acompanhados = al.filter(function(a){ return a.nivel === "ok"; }).length;
+  var confirmar = al.filter(function(a){ return a.nivel === "conf" || a.nivel === "none"; }).length;
   var alertaValor = km ? (vencidos ? vencidos : (perto ? perto : 0)) : "—";
   var alertaNota = !km ? "informe o odômetro para calcular"
                  : vencidos ? (vencidos === 1 ? "item passou do ponto" : "itens passaram do ponto")
                  : perto ? (perto === 1 ? "item chegando na hora" : "itens chegando na hora")
-                 : acompanhados + " itens acompanhados, tudo em dia";
+                 : acompanhados + " em dia" + (confirmar ? " · " + confirmar + " sem registro seu" : "");
 
   var html = "";
   html += '<div class="'+cls+'"><span class="label">Alertas</span><span class="value">'+alertaValor+'</span><span class="note">'+alertaNota+'</span></div>';
@@ -76,20 +78,22 @@ function cardAlerta(a){
   var alvo = [];
   if (a.proxKm) alvo.push(fmtKm(a.proxKm) + " km");
   if (a.proxData) alvo.push(fmtData(a.proxData));
-  var rot = a.nivel === "crit" ? "Passou do ponto" : a.nivel === "warn" ? "Chegando na hora" : a.nivel === "ok" ? "Em dia" : "Sem registro";
+  var rot = a.nivel === "crit" ? "Passou do ponto" : a.nivel === "warn" ? "Chegando na hora" : a.nivel === "ok" ? "Em dia" : a.nivel === "conf" ? "Confirmar" : "Sem registro";
   var linha2 = a.m
     ? "Última troca: " + fmtData(a.m.data) + " aos " + fmtKm(a.m.km) + " km" + (a.m.oficina ? " · " + esc(a.m.oficina) : "")
     : (a.origem === "estimado"
-        ? "Sem registro seu — estimativa pelo intervalo do plano a partir do odômetro"
+        ? "Sem registro seu — estimativa: a primeira troca do plano ainda não chegou"
+        : a.origem === "confirmar"
+        ? "Sem registro seu — pode já estar vencido. Registre a última troca, mesmo antiga, para o app calcular certo"
         : "Sem registro seu — registre a última troca para o app calcular a próxima");
   return '<article class="card">'+
-    '<span class="stripe '+(a.nivel === "none" ? "" : a.nivel)+'"></span>'+
+    '<span class="stripe '+(a.nivel === "none" || a.nivel === "conf" ? "" : a.nivel)+'"></span>'+
     '<div class="grow">'+
       '<div class="title-row"><h3>'+esc(a.nome)+'</h3>'+
-        '<span class="pill '+(a.nivel === "none" ? "" : a.nivel)+'">'+rot+'</span>'+
+        '<span class="pill '+(a.nivel === "none" || a.nivel === "conf" ? "" : a.nivel)+'">'+rot+'</span>'+
         (a.p ? '<span class="pill">a cada '+esc(textoIntervalo(a.p))+'</span>' : '')+
       '</div>'+
-      (alvo.length ? '<div class="meta"><span>Alvo: '+esc(alvo.join(" ou "))+'</span><span>'+esc(partes.join(" · "))+'</span></div>' : '')+
+      (alvo.length && a.nivel !== "conf" ? '<div class="meta"><span>Alvo'+(a.origem === "confirmar" ? " provável" : "")+': '+esc(alvo.join(" ou "))+'</span><span>'+esc(partes.join(" · "))+'</span></div>' : '')+
       '<div class="meta"><span>'+linha2+'</span></div>'+
       (a.p && a.p.nota ? '<div class="obs">'+esc(a.p.nota)+'</div>' : '')+
     '</div>'+
@@ -110,13 +114,15 @@ function renderAlertas(al){
   }
   var atencao = al.filter(function(a){ return a.nivel === "crit" || a.nivel === "warn"; });
   var emDia   = al.filter(function(a){ return a.nivel === "ok"; });
+  var conf    = al.filter(function(a){ return a.nivel === "conf"; });
   var sem     = al.filter(function(a){ return a.nivel === "none"; });
   var html = "";
   if (atencao.length){
     html += '<div class="group-head"><span>Precisa de atenção</span><span>'+atencao.length+'</span></div>' + atencao.map(cardAlerta).join("");
   } else {
-    html += '<div class="empty"><h3>Nada vencido por enquanto</h3><p>Nenhum item do plano passou do ponto com o odômetro em '+fmtKm(kmAtual())+' km.</p></div>';
+    html += '<div class="empty"><h3>'+(conf.length || sem.length ? 'Nada vencido entre os itens com registro' : 'Nada vencido por enquanto')+'</h3><p>Odômetro em '+fmtKm(kmAtual())+' km.'+(conf.length || sem.length ? ' Os itens sem registro precisam da última troca.' : '')+'</p></div>';
   }
+  if (conf.length) html += '<details class="grupo" open><summary><span class="lbl">Confirmar última troca</span><span>'+conf.length+'</span></summary><div class="stack">'+conf.map(cardAlerta).join("")+'</div></details>';
   if (emDia.length) html += '<details class="grupo"'+(atencao.length ? '' : ' open')+'><summary><span class="lbl">Em dia</span><span>'+emDia.length+'</span></summary><div class="stack">'+emDia.map(cardAlerta).join("")+'</div></details>';
   if (sem.length)   html += '<details class="grupo"><summary><span class="lbl">Sem data prevista</span><span>'+sem.length+'</span></summary><div class="stack">'+sem.map(cardAlerta).join("")+'</div></details>';
   box.innerHTML = html;
@@ -259,10 +265,25 @@ function setView(v){
 
 /* ---------- odômetro e uso severo ---------- */
 var kmInput = document.getElementById("km-atual");
+var perguntandoKm = false;
 function commitKm(){
-  var v = veiculo(); if (!v) return;
-  var novo = Math.max(0, Math.round(num(kmInput.value)));
-  if (novo !== num(v.kmAtual)){ v.kmAtual = novo; cacheLocal(); salvarPerfil(); }
+  var v = veiculo(); if (!v || perguntandoKm) return;
+  var atual = kmAtual(), novo = Math.max(0, Math.round(num(kmInput.value)));
+  if (novo === atual) return;
+  function voltar(){ kmInput.value = atual ? String(Math.round(atual)) : ""; }
+  var maior = null, ok = true;
+  v.manut.concat(v.abast).forEach(function(r){ if (num(r.km) > novo && (!maior || num(r.km) > num(maior.km))) maior = r; });
+  perguntandoKm = true; // a janela de aviso tira o foco do campo e chamaria isto de novo
+  if (maior){
+    ok = false; voltar();
+    alert("O registro “" + (maior.item || "Abastecimento") + "” de " + fmtData(maior.data) + " está com " + fmtKm(maior.km) +
+      " km, mais que " + fmtKm(novo) + " km. Se ele estiver errado, corrija o registro primeiro.");
+  } else if (saltoSuspeito(atual, novo)){
+    ok = confirm("O odômetro vai de " + fmtKm(atual) + " para " + fmtKm(novo) + " km. Está certo?");
+    if (!ok) voltar();
+  }
+  perguntandoKm = false;
+  if (ok){ v.kmAtual = novo; cacheLocal(); salvarPerfil(); }
 }
 kmInput.addEventListener("change", commitKm);
 kmInput.addEventListener("blur", commitKm);

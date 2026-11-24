@@ -4,6 +4,7 @@
 
 import { veiculo } from './dados.js';
 import { num, chave, diasAte, somaMeses, fmtKm } from './util.js';
+import { consumosDe, mediaDe, estimar } from './contas.js';
 
 function planoDoVeiculo(){
   var v = veiculo();
@@ -48,7 +49,8 @@ function ultimoRegistro(){
 
 /* Um item por peça: os itens do plano do veículo + tudo que você registrou.
    A próxima troca sai do que você definiu no registro; se não definiu, do plano;
-   se nunca registrou, é estimada a partir do odômetro. */
+   se nunca registrou, é estimada pelo odômetro, mas só vale como "em dia" enquanto
+   a primeira troca não chegou. Depois disso o app pede para você confirmar. */
 function alertas(){
   var reg = ultimoRegistro(), km = kmAtual(), vistos = {}, out = [];
 
@@ -63,8 +65,9 @@ function alertas(){
       proxData = iv.meses ? somaMeses(m.data, iv.meses) : "";
       origem = "plano";
     } else if (!m && p && p.fonte !== "semtroca" && iv.km && km > 0){
-      proxKm = Math.floor(km / iv.km) * iv.km + iv.km;
-      origem = "estimado";
+      var e = estimar(iv, km, veiculo().ano, new Date().getFullYear());
+      proxKm = e.proxKm;
+      origem = e.confirmar ? "confirmar" : "estimado";
     } else if (!m){
       origem = "sem-registro";
     }
@@ -75,6 +78,7 @@ function alertas(){
     else if ((faltaKm !== null && faltaKm <= 0) || (faltaDias !== null && faltaDias <= 0)) nivel = "crit";
     else if ((faltaKm !== null && faltaKm <= 1000) || (faltaDias !== null && faltaDias <= 30)) nivel = "warn";
     var ordem = Math.min(faltaKm === null ? 1e9 : faltaKm, faltaDias === null ? 1e9 : faltaDias * 40);
+    if (origem === "confirmar" && nivel === "ok") nivel = "conf";
     if (origem === "sem-registro") ordem = 2e9;
     return { nome:nome, p:p, m:m, proxKm:proxKm, proxData:proxData, origem:origem,
              faltaKm:faltaKm, faltaDias:faltaDias, nivel:nivel, ordem:ordem };
@@ -95,19 +99,11 @@ function alertas(){
   return out.sort(function(a,b){ return a.ordem - b.ordem; });
 }
 
-/* km/l entre dois abastecimentos de tanque cheio consecutivos. */
 function consumos(){
-  var v = veiculo(); if (!v) return [];
-  var lista = v.abast.slice().sort(function(a,b){ return num(a.km) - num(b.km); });
-  var out = [], ultimoCheio = null;
-  lista.forEach(function(a){
-    if (a.cheio && ultimoCheio && num(a.km) > num(ultimoCheio.km) && num(a.litros) > 0){
-      out.push({ id:a.id, kmRodados:num(a.km) - num(ultimoCheio.km), kmL:(num(a.km) - num(ultimoCheio.km)) / num(a.litros) });
-    }
-    if (a.cheio) ultimoCheio = a;
-  });
-  return out;
+  var v = veiculo();
+  return v ? consumosDe(v.abast) : [];
 }
+function consumoMedio(){ return mediaDe(consumos()); }
 
 function custoPorKm(){
   var v = veiculo(); if (!v || v.abast.length < 2) return null;
@@ -119,4 +115,4 @@ function custoPorKm(){
   return gasto ? gasto / rodados : null;
 }
 
-export { intervalo, textoIntervalo, kmAtual, ultimoRegistro, alertas, consumos, custoPorKm, planoDoVeiculo };
+export { intervalo, textoIntervalo, kmAtual, ultimoRegistro, alertas, consumos, consumoMedio, custoPorKm, planoDoVeiculo };

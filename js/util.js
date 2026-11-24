@@ -2,6 +2,7 @@
  Formatação, datas, números e download de arquivos. Nada aqui conhece a tela nem os dados. */
 
 import { chave } from './texto.js';
+import { somaMeses } from './contas.js';
 
 function uid(){
   try { if (crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g,""); } catch(e){}
@@ -34,13 +35,6 @@ var toastEl = document.getElementById("toast"), toastT = null;
 function toast(msg){
   toastEl.textContent = msg; toastEl.classList.add("show");
   clearTimeout(toastT); toastT = setTimeout(function(){ toastEl.classList.remove("show"); }, 2600);
-}
-
-function somaMeses(iso, meses){
-  var t = dateVal(iso); if (!isFinite(t) || !meses) return "";
-  var d = new Date(t); d.setMonth(d.getMonth() + meses);
-  var p = function(x){ return String(x).padStart(2,"0"); };
-  return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());
 }
 
 function baixarArquivo(nome, texto, tipo){

@@ -1,7 +1,7 @@
 {
-  "name": "Garagem da Livina",
+  "name": "Garagem",
   "short_name": "Garagem",
-  "description": "Histórico de manutenção, peças trocadas e abastecimentos da Nissan Grand Livina 2013.",
+  "description": "Histórico de manutenção, peças trocadas e abastecimentos dos seus veículos.",
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",
