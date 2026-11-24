@@ -94,8 +94,8 @@ function cardAlerta(a){
       (a.p && a.p.nota ? '<div class="obs">'+esc(a.p.nota)+'</div>' : '')+
     '</div>'+
     '<div class="right-col">'+
-      (a.m ? '<button class="btn btn-sm" data-edit-m="'+esc(a.m.id)+'">Ver registro</button>'
-           : '<button class="btn btn-sm" data-novo="'+esc(a.nome)+'">Registrar troca</button>')+
+      '<button class="btn btn-sm" data-novo="'+esc(a.nome)+'">Registrar '+(a.m ? 'nova ' : '')+'troca</button>'+
+      (a.m ? '<button class="btn btn-sm" data-edit-m="'+esc(a.m.id)+'">Ver registro</button>' : '')+
     '</div>'+
   '</article>';
 }

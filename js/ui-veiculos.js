@@ -127,6 +127,7 @@ form.addEventListener("submit", function(e){
     criarVeiculo(dados);
     toast("Veículo cadastrado — o plano de manutenção já está montado");
   } else {
+    state.veiculos.forEach(function(v){ if (v.id === editando.id) editando = v; });
     var mudouPlano = editando.modeloId !== dados.modeloId ||
       PERGUNTAS_PERFIL.some(function(q){ return editando.perfil[q.campo] !== dados.perfil[q.campo]; });
     var plano = mudouPlano ? reconstruirPlano(editando.plano, dados.perfil, dados.modeloId) : editando.plano;

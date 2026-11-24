@@ -88,8 +88,12 @@ formM.addEventListener("submit", function(e){
     proxData: document.getElementById("m-proxdata").value || ""
   };
   if (obj.km > num((veiculo()||{}).kmAtual)){ veiculo().kmAtual = obj.km; veiculo().atualizadoEm = hoje(); cacheLocal(); }
-  gravar("manutencoes", obj);
+  var ok = gravar("manutencoes", obj);
   dlgM.close();
+  if (!ok) {
+    alert("ATENÇÃO: este navegador não conseguiu salvar. Use “Salvar backup” antes de fechar o app.");
+    return;
+  }
   toast(editM ? "Registro atualizado" : "Serviço registrado");
 });
 document.getElementById("m-cancel").addEventListener("click", function(){ dlgM.close(); });
@@ -143,8 +147,12 @@ formA.addEventListener("submit", function(e){
     cheio: document.getElementById("a-cheio").checked
   };
   if (obj.km > num((veiculo()||{}).kmAtual)){ veiculo().kmAtual = obj.km; veiculo().atualizadoEm = hoje(); cacheLocal(); }
-  gravar("abastecimentos", obj);
+  var ok = gravar("abastecimentos", obj);
   dlgA.close();
+  if (!ok) {
+    alert("ATENÇÃO: este navegador não conseguiu salvar. Use “Salvar backup” antes de fechar o app.");
+    return;
+  }
   toast(editA ? "Abastecimento atualizado" : "Abastecimento registrado");
 });
 document.getElementById("a-cancel").addEventListener("click", function(){ dlgA.close(); });

@@ -79,7 +79,9 @@ form.addEventListener("submit", function(e){
     ativo: document.getElementById("i-ativo").checked,
     fonte: "voce"
   };
-  if (editando) Object.assign(editando, campos);
+  // Os dados podem ter sido relidos com a janela aberta: busca o item atual pelo id.
+  var atual = editando && v.plano.filter(function(p){ return p.id === editando.id; })[0];
+  if (atual) Object.assign(atual, campos);
   else v.plano.push(Object.assign({ id: uid(), criadoPorVoce: true }, campos));
   cacheLocal(); notificar();
   dlg.close();

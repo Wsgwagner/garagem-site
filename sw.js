@@ -1,5 +1,5 @@
 /* Garagem da Livina — service worker: faz o app abrir sem internet. */
-var CACHE = "garagem-v5";
+var CACHE = "garagem-v6";
 var ARQUIVOS = [
   "./",
   "./index.html",
@@ -25,7 +25,7 @@ var ARQUIVOS = [
 self.addEventListener("install", function(e){
   e.waitUntil(
     caches.open(CACHE)
-      .then(function(c){ return c.addAll(ARQUIVOS); })
+      .then(function(c){ return c.addAll(ARQUIVOS.map(function(a){ return new Request(a, { cache:"reload" }); })); })
       .then(function(){ return self.skipWaiting(); })
       .catch(function(){})
   );
@@ -57,7 +57,23 @@ self.addEventListener("fetch", function(e){
     return;
   }
 
-  // Demais arquivos (ícones, fontes): cache primeiro, rede depois.
+  // Arquivos do próprio app: rede primeiro, para a correção chegar sem mudar a versão.
+  if (new URL(req.url).origin === self.location.origin){
+    e.respondWith(
+      fetch(req, { cache:"no-cache" }).then(function(resp){
+        if (resp.ok){
+          var copia = resp.clone();
+          caches.open(CACHE).then(function(c){ return c.put(req, copia); }).catch(function(){});
+        }
+        return resp;
+      }).catch(function(){
+        return caches.match(req).then(function(r){ return r || Response.error(); });
+      })
+    );
+    return;
+  }
+
+  // Fontes externas: cache primeiro, rede depois.
   e.respondWith(
     caches.match(req).then(function(cacheado){
       if (cacheado) return cacheado;

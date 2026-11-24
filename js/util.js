@@ -28,7 +28,11 @@ function fmtKm(n){ return Math.round(num(n)).toLocaleString("pt-BR"); }
 function fmtBRL(n){ return num(n).toLocaleString("pt-BR",{style:"currency",currency:"BRL"}); }
 function fmtDec(n,d){ return num(n).toLocaleString("pt-BR",{minimumFractionDigits:d||1,maximumFractionDigits:d||1}); }
 function totalManut(m){ return num(m.custoPecas) + num(m.custoMaoObra); }
-function chave(item){ return String(item||"").trim().toLowerCase().replace(/\s+/g," "); }
+/* Sem acento e sem maiúscula: "oleo do motor" é o mesmo item que "Óleo do motor". */
+function chave(item){
+  return String(item||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .trim().toLowerCase().replace(/\s+/g," ");
+}
 
 var toastEl = document.getElementById("toast"), toastT = null;
 function toast(msg){

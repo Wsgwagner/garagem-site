@@ -20,6 +20,17 @@ function apelidoArquivo(){
     .replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") || "veiculo";
 }
 
+/* Lugares em que o próprio navegador costuma apagar ou separar os dados. */
+function riscoDePerda(){
+  var ua = navigator.userAgent || "";
+  var instalado = navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+  if (/FBAN|FBAV|Instagram|WhatsApp|; wv\)/i.test(ua))
+    return "Você abriu por dentro de outro aplicativo: os registros daqui não aparecem no Chrome nem no Safari. Abra o endereço direto no navegador.";
+  if (/iPhone|iPad/i.test(ua) && !instalado)
+    return "No iPhone, o Safari pode apagar os dados depois de 7 dias de uso sem abrir este site. Salve um backup, use Compartilhar → Adicionar à Tela de Início e restaure o backup dentro do app instalado.";
+  return "";
+}
+
 /* Rodapé: onde os dados estão e quando foi o último backup. */
 function marcaArmazenamento(){
   var dot = document.getElementById("store-dot"), lbl = document.getElementById("store-label");
@@ -32,6 +43,8 @@ function marcaArmazenamento(){
     ? "Saia da aba anônima ou libere o armazenamento do site, senão o que você registrar se perde ao fechar. Enquanto isso, salve um backup antes de sair."
     : (n === 0 ? "Os registros ficam guardados neste aparelho. Salve um backup de vez em quando — é o que traz tudo de volta se você trocar de celular."
                : "Último backup: " + (v && v.ultimoBackup ? fmtData(v.ultimoBackup) : "nunca") + ". Vale salvar um a cada revisão.");
+  var risco = riscoDePerda();
+  if (armazenamentoOk && risco) av.textContent = risco + " " + av.textContent;
 }
 
 function csv(linhas){
@@ -166,8 +179,10 @@ document.getElementById("gerar-pdf").addEventListener("click", function(){
 window.addEventListener("beforeprint", montarRelatorio);
 
 document.getElementById("baixar-backup").addEventListener("click", fazerBackup);
-document.getElementById("restaurar-backup").addEventListener("click", function(){
-  document.getElementById("arquivo-backup").click();
+["restaurar-backup","restaurar-inicio"].forEach(function(id){
+  document.getElementById(id).addEventListener("click", function(){
+    document.getElementById("arquivo-backup").click();
+  });
 });
 document.getElementById("arquivo-backup").addEventListener("change", function(e){
   var f = e.target.files && e.target.files[0];

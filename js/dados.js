@@ -69,32 +69,116 @@ function salvarVeiculo(campos){
 }
 
 /* ---------- gravação ---------- */
-function cacheLocal(){
-  try { localStorage.setItem(CHAVE, JSON.stringify(state)); armazenamentoOk = true; }
-  catch(e){ armazenamentoOk = false; }
+/* "base" é o último texto que esta janela leu ou gravou. Se o que está no aparelho
+   for diferente, outra janela gravou depois: junta as duas antes de salvar, em vez
+   de passar por cima dos registros dela. */
+var base = "";
+
+function porId(lista){
+  var m = {};
+  (Array.isArray(lista) ? lista : []).forEach(function(x){ if (x && x.id) m[x.id] = x; });
+  return m;
 }
+function igual(a, b){ return JSON.stringify(a) === JSON.stringify(b); }
+
+/* Três versões de uma lista: como era (antes), a desta janela e a da outra. */
+function juntarLista(antes, minha, outra, juntarItem){
+  var a = porId(antes), m = porId(minha), o = porId(outra), out = [];
+  (minha || []).forEach(function(x){
+    if (!x) return;
+    if (!o[x.id]){
+      // A outra janela excluiu: sai, a não ser que tenha sido criado ou mudado aqui.
+      if (!a[x.id] || !igual(a[x.id], x)) out.push(x);
+    } else out.push(juntarItem(a[x.id], x, o[x.id]));
+  });
+  (outra || []).forEach(function(x){
+    if (!x || m[x.id]) return;
+    if (!a[x.id] || !igual(a[x.id], x)) out.push(x);
+  });
+  return out;
+}
+/* Quem mudou desde a versão anterior vale; se os dois mudaram, vale esta janela. */
+function escolher(antes, meu, outro){ return antes !== undefined && igual(antes, meu) ? outro : meu; }
+function juntarVeiculo(antes, meu, outro){
+  antes = antes || {};
+  var v = {};
+  Object.keys(Object.assign({}, outro, meu)).forEach(function(c){
+    v[c] = (c === "manut" || c === "abast" || c === "plano")
+      ? juntarLista(antes[c], meu[c], outro[c], escolher)
+      : escolher(antes[c], meu[c], outro[c]);
+  });
+  return v;
+}
+function lerTexto(bruto){
+  try {
+    var d = JSON.parse(bruto);
+    return d && Array.isArray(d.veiculos) ? d : null;
+  } catch(e){ return null; }
+}
+
+function cacheLocal(){
+  try {
+    var bruto = localStorage.getItem(CHAVE);
+    if (bruto && bruto !== base){
+      var outro = lerTexto(bruto);
+      if (outro) state.veiculos = juntarLista((lerTexto(base) || {}).veiculos, state.veiculos, outro.veiculos, juntarVeiculo);
+    }
+    var texto = JSON.stringify(state);
+    localStorage.setItem(CHAVE, texto);
+    armazenamentoOk = localStorage.getItem(CHAVE) === texto;
+    if (armazenamentoOk) base = texto;
+  } catch(e){ armazenamentoOk = false; }
+  return armazenamentoOk;
+}
+
+/* Outra janela salvou, ou esta voltou a aparecer: mostra o que está no aparelho. */
+function sincronizar(){
+  var bruto = null;
+  try { bruto = localStorage.getItem(CHAVE); } catch(e){ return; }
+  if (!bruto || bruto === base || !armazenamentoOk) return;
+  var d = lerTexto(bruto);
+  if (!d) return;
+  state.veiculos = d.veiculos;
+  base = bruto;
+  notificar();
+}
+window.addEventListener("storage", function(e){ if (e.key === CHAVE) sincronizar(); });
+window.addEventListener("pageshow", sincronizar);
+document.addEventListener("visibilitychange", function(){ if (!document.hidden) sincronizar(); });
+
 function lerLocal(){
   try {
     localStorage.setItem(CHAVE + "-teste", "1");
     localStorage.removeItem(CHAVE + "-teste");
   } catch(e){ armazenamentoOk = false; }
 
-  var bruto = null;
+  var bruto = null, d = null;
   try { bruto = localStorage.getItem(CHAVE); } catch(e){}
   if (bruto){
-    try {
-      var d = JSON.parse(bruto);
-      if (d && Array.isArray(d.veiculos)){
-        state.veiculos = d.veiculos;
-        state.veiculoAtivo = d.veiculoAtivo || (d.veiculos[0] && d.veiculos[0].id) || "";
-      }
-    } catch(e){}
+    d = lerTexto(bruto);
+    if (!d){
+      // Gravação ilegível: guarda como está, para não perder, e volta à última cópia boa.
+      try { localStorage.setItem(CHAVE + "-ilegivel-" + Date.now(), bruto); } catch(e){}
+      try { d = lerTexto(localStorage.getItem(CHAVE + "-copia")); } catch(e){}
+      toast(d ? "Os dados não abriram; voltei à última cópia boa." : "Os dados não abriram. Restaure um backup.");
+    }
+    if (d){
+      state.veiculos = d.veiculos;
+      state.veiculoAtivo = d.veiculoAtivo || (d.veiculos[0] && d.veiculos[0].id) || "";
+      base = bruto;
+      try { localStorage.setItem(CHAVE + "-copia", JSON.stringify(d)); } catch(e){}
+    }
   }
   if (!state.veiculos.length) migrarVersaoAntiga();
   // Garante que todo veículo tem plano (arquivo antigo, ou plano apagado à mão).
   state.veiculos.forEach(function(v){
     if (!Array.isArray(v.plano) || !v.plano.length) v.plano = montarPlano(v.perfil, v.modeloId);
+    if (!Array.isArray(v.manut)) v.manut = [];
+    if (!Array.isArray(v.abast)) v.abast = [];
   });
+
+  // Pede ao navegador para não limpar estes dados quando faltar espaço.
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function(){});
 }
 
 /* O app antigo guardava um veículo só, numa outra chave. Traz tudo para cá. */
@@ -129,8 +213,11 @@ function gravar(col, obj){
   var lista = col === "manutencoes" ? v.manut : v.abast;
   var i = -1, k;
   for (k = 0; k < lista.length; k++) if (lista[k].id === obj.id) i = k;
+  obj.mod = new Date().toISOString();
   if (i >= 0) lista[i] = obj; else lista.push(obj);
-  cacheLocal(); notificar();
+  var ok = cacheLocal();
+  notificar();
+  return ok;
 }
 function apagar(col, id){
   var v = veiculo(); if (!v) return;
@@ -183,14 +270,25 @@ function aplicarBackup(texto){
         if (!r || !r.id) return;
         var achou = -1, i;
         for (i = 0; i < alvo[col].length; i++) if (alvo[col][i].id === r.id) achou = i;
-        if (achou >= 0){ alvo[col][achou] = r; atualizados++; }
+        if (achou >= 0){
+          // Só troca se o do backup for mais novo: backup antigo não desfaz edição.
+          if ((r.mod || "") > (alvo[col][achou].mod || "")){ alvo[col][achou] = r; atualizados++; }
+        }
         else { alvo[col].push(r); novos++; }
       });
+    });
+    // Ajustes do plano feitos por você também voltam, se aqui ainda não houver ajuste.
+    (vb.plano || []).forEach(function(p){
+      if (!p || (p.fonte !== "voce" && !p.criadoPorVoce)) return;
+      var aqui = alvo.plano.filter(function(x){ return chave(x.item) === chave(p.item); })[0];
+      if (!aqui) alvo.plano.push(p);
+      else if (aqui.fonte !== "voce") Object.assign(aqui, p, { id: aqui.id });
     });
     if (num(vb.kmAtual) > num(alvo.kmAtual)) alvo.kmAtual = num(vb.kmAtual);
   });
   if (!state.veiculoAtivo && state.veiculos.length) state.veiculoAtivo = state.veiculos[0].id;
-  cacheLocal(); notificar();
+  var ok = cacheLocal(); notificar();
+  if (!ok){ toast("Este navegador não guardou os dados do backup."); return; }
   toast((veiculosNovos ? veiculosNovos + " veículo(s), " : "") + novos + " registro(s) novo(s), " + atualizados + " atualizado(s)");
 }
 
