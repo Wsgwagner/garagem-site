@@ -26,6 +26,7 @@ function detalhe(m){
 
 function renderCustos(){
   var v = veiculo(), box = document.getElementById("custos-box");
+  if (!box) return; // página antiga em cache: o app abre sem esta aba
   var c = atual = custos(v || {}, hoje());
   var aviso = c.semValor ? '<p class="helper">'+c.semValor+(c.semValor === 1 ? ' serviço está' : ' serviços estão')+
     ' sem valor nos últimos 12 meses, então o total real pode ser maior.</p>' : '';
@@ -69,6 +70,6 @@ function apontado(e){
   var b = e.target.closest && e.target.closest("[data-mes]");
   if (b && atual) detalhe(atual.meses[Number(b.dataset.mes)]);
 }
-["pointerover","focusin","click"].forEach(function(t){ document.getElementById("custos-box").addEventListener(t, apontado); });
+["pointerover","focusin","click"].forEach(function(t){ document.addEventListener(t, apontado); });
 
 export { renderCustos };

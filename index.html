@@ -382,6 +382,17 @@
   </form>
 </dialog>
 
+<script>
+/* Se o app não abrir (página antiga guardada com código novo), busca a página de novo uma vez. */
+window.addEventListener("error", function(){
+  if (window.garagemAberta || !navigator.onLine) return;
+  try {
+    if (sessionStorage.getItem("garagem-recarregou")) return;
+    sessionStorage.setItem("garagem-recarregou", "1");
+  } catch(e){ return; }
+  fetch(location.href, { cache:"reload" }).then(function(){ location.reload(); }).catch(function(){});
+}, true);
+</script>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>

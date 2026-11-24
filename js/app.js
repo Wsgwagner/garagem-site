@@ -20,3 +20,5 @@ if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0){
 
 lerLocal();
 render();
+window.garagemAberta = true;
+try { sessionStorage.removeItem("garagem-recarregou"); } catch(e){}

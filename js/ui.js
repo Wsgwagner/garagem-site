@@ -263,6 +263,7 @@ function renderDatalists(){
 function irPara(t){
   tab = t;
   ["alertas","manut","abast","docs","custos","plano"].forEach(function(k){
+    if (!document.getElementById("tab-"+k)) return;
     document.getElementById("tab-"+k).setAttribute("aria-selected", String(k === t));
     document.getElementById("panel-"+k).hidden = (k !== t);
   });

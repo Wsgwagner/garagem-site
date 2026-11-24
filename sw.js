@@ -1,5 +1,5 @@
 /* Garagem — service worker: faz o app abrir sem internet. */
-var CACHE = "garagem-v12";
+var CACHE = "garagem-v13";
 var ARQUIVOS = [
   "./",
   "./index.html",
@@ -55,9 +55,12 @@ self.addEventListener("fetch", function(e){
   // Navegação: tenta a rede, cai para o cache quando está sem internet.
   if (req.mode === "navigate"){
     e.respondWith(
-      fetch(req).then(function(resp){
-        var copia = resp.clone();
-        caches.open(CACHE).then(function(c){ c.put("./index.html", copia); }).catch(function(){});
+      // Sem o cache do navegador: página antiga com código novo não abre.
+      fetch(req.url, { cache:"no-cache", credentials:"same-origin" }).then(function(resp){
+        if (resp.ok){
+          var copia = resp.clone();
+          caches.open(CACHE).then(function(c){ c.put("./index.html", copia); }).catch(function(){});
+        }
         return resp;
       }).catch(function(){
         return caches.match("./index.html").then(function(r){ return r || caches.match("./"); });
