@@ -186,13 +186,16 @@ function salvarPerfil(){
   v.atualizadoEm = hoje();
   cacheLocal(); notificar();
 }
-function gravar(col, obj){
+function gravar(col, obj){ return gravarVarios(col, [obj]); }
+function gravarVarios(col, objs){
   var v = veiculo(); if (!v) return;
   var lista = col === "manutencoes" ? v.manut : v.abast;
-  var i = -1, k;
-  for (k = 0; k < lista.length; k++) if (lista[k].id === obj.id) i = k;
-  obj.mod = new Date().toISOString();
-  if (i >= 0) lista[i] = obj; else lista.push(obj);
+  objs.forEach(function(obj){
+    var i = -1, k;
+    for (k = 0; k < lista.length; k++) if (lista[k].id === obj.id) i = k;
+    obj.mod = new Date().toISOString();
+    if (i >= 0) lista[i] = obj; else lista.push(obj);
+  });
   var ok = cacheLocal();
   notificar();
   return ok;
@@ -384,5 +387,5 @@ export {
   CHAVE_BASE, lerVeiculos, aplicarVeiculos,
   state, armazenamentoOk, aoMudar, notificar, cacheLocal, lerLocal,
   veiculo, criarVeiculo, selecionarVeiculo, excluirVeiculo, salvarVeiculo,
-  salvarPerfil, gravar, apagar, fazerBackup, aplicarBackup, importarCSV
+  salvarPerfil, gravar, gravarVarios, apagar, fazerBackup, aplicarBackup, importarCSV
 };

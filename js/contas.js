@@ -61,7 +61,13 @@ function aplicarKm(v, antigo, novo){
   if (n(novo.km) > n(v.kmAtual)){ novo.kmAntes = n(v.kmAtual); v.kmAtual = n(novo.km); }
   return n(v.kmAtual) !== antes;
 }
+/* Divide um valor em n partes iguais em centavos; a sobra vai para as primeiras. */
+function ratear(valor, partes){
+  var cent = Math.round(n(valor) * 100), base = Math.floor(cent / partes), sobra = cent - base * partes, out = [];
+  for (var i = 0; i < partes; i++) out.push((base + (i < sobra ? 1 : 0)) / 100);
+  return out;
+}
 /* Salto grande demais costuma ser um dígito a mais. */
 function saltoSuspeito(atual, novo){ return atual > 0 && novo - atual > 20000; }
 
-export { somaMeses, consumosDe, mediaDe, estimar, desfazerKm, aplicarKm, saltoSuspeito };
+export { somaMeses, consumosDe, mediaDe, estimar, desfazerKm, aplicarKm, ratear, saltoSuspeito };

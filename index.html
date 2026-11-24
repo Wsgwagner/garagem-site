@@ -83,7 +83,10 @@
           <button id="view-hist" aria-pressed="true">Linha do tempo</button>
           <button id="view-peca" aria-pressed="false">Por peça</button>
         </div>
-        <button class="btn btn-primary" id="add-manut">+ Registrar troca ou serviço</button>
+        <span style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="add-revisao">+ Revisão completa</button>
+          <button class="btn" id="add-manut">+ Registrar troca ou serviço</button>
+        </span>
       </div>
       <div id="manut-list" class="stack"></div>
     </section>
@@ -266,6 +269,33 @@
       <button type="button" class="btn btn-ghost" id="m-delete" hidden>Excluir</button>
       <span class="spacer"></span>
       <button type="button" class="btn" id="m-cancel">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ================= revisão completa ================= -->
+<dialog id="dlg-revisao">
+  <form method="dialog" id="form-revisao">
+    <div class="dlg-head"><h2>Revisão completa</h2></div>
+    <div class="dlg-body">
+      <div class="grid">
+        <div class="field"><label for="r-data">Data</label><input type="date" id="r-data" required></div>
+        <div class="field"><label for="r-km">Km no serviço</label><input type="number" id="r-km" min="1" step="1" inputmode="numeric" required></div>
+        <div class="field"><label for="r-oficina">Oficina</label><input type="text" id="r-oficina" list="oficinas" placeholder="Onde foi feito"></div>
+        <div class="field"><label for="r-mo">Mão de obra total (R$)</label><input type="number" id="r-mo" min="0" step="0.01" inputmode="decimal"></div>
+      </div>
+      <p class="helper" style="margin:8px 0 0">A mão de obra é dividida igualmente entre os serviços marcados. A próxima troca sai do plano.</p>
+      <div id="r-lista"></div>
+      <div class="rev-novo">
+        <input type="text" id="r-novo" list="pecas-comuns" placeholder="Outra peça ou serviço" aria-label="Outra peça ou serviço">
+        <button type="button" class="btn" id="r-add">Adicionar</button>
+      </div>
+      <div class="field" style="margin-top:12px"><label for="r-obs">Observações</label><textarea id="r-obs" placeholder="Vale para todos os serviços desta revisão"></textarea></div>
+    </div>
+    <div class="dlg-foot">
+      <span class="helper spacer" id="r-total" aria-live="polite"></span>
+      <button type="button" class="btn" id="r-cancel">Cancelar</button>
       <button type="submit" class="btn btn-primary">Salvar</button>
     </div>
   </form>

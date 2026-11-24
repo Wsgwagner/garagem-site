@@ -53,3 +53,7 @@ test('salto suspeito', () => {
   assert.ok(!k.saltoSuspeito(0, 156000));
   assert.ok(!k.saltoSuspeito(156000, 157000));
 });
+test('rateio fecha com o total', () => {
+  assert.deepEqual(k.ratear(100, 3), [33.34, 33.33, 33.33]);
+  assert.deepEqual(k.ratear(0, 2), [0, 0]);
+});

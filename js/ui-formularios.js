@@ -177,4 +177,4 @@ document.getElementById("a-delete").addEventListener("click", function(){
   }
 });
 
-export { abrirManut, abrirAbast, itemDoPlano };
+export { abrirManut, abrirAbast, itemDoPlano, kmConfirmado };
