@@ -4,8 +4,8 @@
 
 import { veiculo, gravar, apagar } from './dados.js';
 import { intervalo, textoIntervalo, kmAtual } from './calculos.js';
-import { abrirFotos, valorFotos, fotosOcupadas, confirmarFotos, apagarFotos } from './fotos.js';
-import { aplicarKm, desfazerKm, saltoSuspeito, repetido, juntarServico } from './contas.js';
+import { abrirFotos, valorFotos, fotosOcupadas, confirmarFotos, apagarFotos, verFotoDe } from './fotos.js';
+import { aplicarKm, desfazerKm, saltoSuspeito, repetido, juntarServico, ordenarTrocas, duracao, durouPouco, naGarantia } from './contas.js';
 import { chave, num, hoje, fmtData, fmtKm, somaMeses, dateVal, toast, uid } from './util.js';
 
 /* Acha no plano do veículo o item com esse nome. */
@@ -36,7 +36,49 @@ function acertarKm(antigo, obj){
 var outraTroca = false, dupNovo = null, dupExiste = null;
 var dlgM = document.getElementById("dlg-manut"), formM = document.getElementById("form-manut"), editM = null, proxTocado = false;
 
+/* Trocas da mesma peça, fora a que está sendo editada. */
+function outrasTrocas(nome, id){
+  return ordenarTrocas(veiculo().manut.filter(function(m){ return chave(m.item) === chave(nome) && m.id !== id; }));
+}
+function textoDuracao(d){
+  var anos = Math.floor(d.dias / 365), meses = Math.floor((d.dias % 365) / 30.4), t = [];
+  if (anos) t.push(anos + (anos === 1 ? " ano" : " anos"));
+  if (meses) t.push(meses + (meses === 1 ? " mês" : " meses"));
+  if (!t.length) t.push(d.dias + (d.dias === 1 ? " dia" : " dias"));
+  return fmtKm(d.km) + " km e " + t.join(" e ");
+}
+/* O prazo que você marcou naquele registro vale mais que o do plano. */
+function previsto(m, iv){
+  var km = num(m.proxKm) - num(m.km);
+  return { km: num(m.proxKm) && km > 0 ? km : iv.km, meses: iv.meses };
+}
+/* Duração da troca anterior à m, com o aviso de desgaste quando durou pouco. */
+function anteriorDurou(m){
+  var v = veiculo(); if (!v) return null;
+  var l = ordenarTrocas(v.manut.filter(function(x){ return chave(x.item) === chave(m.item); })), i = -1;
+  l.forEach(function(x, k){ if (x.id === m.id) i = k; });
+  var ant = i >= 0 ? l[i + 1] : null, d = ant && duracao(ant, m);
+  if (!d) return null;
+  var p = itemDoPlano(m.item);
+  return { antes: ant, texto: textoDuracao(d), garantia: naGarantia(ant, m.data),
+    pouco: p && p.fonte !== "semtroca" && p.fonte !== "inspecao" ? durouPouco(d, previsto(ant, intervalo(p))) : 0 };
+}
+/* Lançando outra vez uma peça que ainda está na garantia. */
+var naGar = null;
+function avisoGarantia(){
+  var box = document.getElementById("m-garantia-aviso");
+  if (!box || !veiculo()) return;
+  var data = document.getElementById("m-data").value || hoje();
+  naGar = editM ? null : outrasTrocas(document.getElementById("m-item").value, "").filter(function(m){ return naGarantia(m, data); })[0] || null;
+  box.hidden = !naGar;
+  if (!naGar) return;
+  document.getElementById("m-garantia-texto").textContent = "A troca de " + fmtData(naGar.data) +
+    (naGar.oficina ? " em " + naGar.oficina : "") + " está na garantia até " + fmtData(naGar.garantia) + ". Vale reclamar antes de pagar outra.";
+  document.getElementById("m-garantia-nota").hidden = !(naGar.fotos && naGar.fotos.length);
+}
+
 function autoProxima(){
+  avisoGarantia();
   var p = itemDoPlano(document.getElementById("m-item").value);
   var nota = document.getElementById("m-plano-nota");
   if (!p || p.fonte === "semtroca"){
@@ -78,6 +120,7 @@ function abrirManut(id, itemSugerido){
   document.getElementById("m-proxkm").value = m.proxKm ? m.proxKm : "";
   document.getElementById("m-proxdata").value = m.proxData || "";
   if (editM) proxTocado = true;
+  if (document.getElementById("m-garantia")) document.getElementById("m-garantia").value = m.garantia || "";
   abrirFotos(m.fotos);
   autoProxima();
   dlgM.showModal();
@@ -109,6 +152,9 @@ formM.addEventListener("submit", function(e){
     proxKm: document.getElementById("m-proxkm").value ? Math.round(num(document.getElementById("m-proxkm").value)) : 0,
     proxData: document.getElementById("m-proxdata").value || ""
   };
+  var campoGar = document.getElementById("m-garantia"); // página antiga em cache não tem o campo
+  var gar = campoGar ? campoGar.value : editM ? editM.garantia : "";
+  if (gar) obj.garantia = gar;
   if (valorFotos().length) obj.fotos = valorFotos();
   if (!editM && !outraTroca){
     var igual = jaLancado(obj), aviso = document.getElementById("dlg-dup");
@@ -131,7 +177,8 @@ formM.addEventListener("submit", function(e){
     return;
   }
   confirmarFotos();
-  toast(editM ? "Registro atualizado" : "Serviço registrado");
+  var dur = editM ? null : anteriorDurou(obj);
+  toast(editM ? "Registro atualizado" : dur ? "Registrado. A anterior durou " + dur.texto : "Serviço registrado");
 });
 /* ---------- aviso de lançamento repetido ---------- */
 if (document.getElementById("dlg-dup")){
@@ -163,6 +210,13 @@ document.getElementById("m-delete").addEventListener("click", function(){
     desfazerKm(veiculo(), editM); apagar("manutencoes", editM.id); apagarFotos(editM.fotos); dlgM.close(); toast("Registro excluído");
   }
 });
+if (document.getElementById("m-garantia-aviso")){
+  document.getElementById("m-garantia-nota").addEventListener("click", function(){ if (naGar) verFotoDe(naGar); });
+  document.getElementById("quick-garantia").addEventListener("click", function(e){
+    var b = e.target.closest("button[data-months]"); if (!b) return;
+    document.getElementById("m-garantia").value = somaMeses(document.getElementById("m-data").value || hoje(), parseInt(b.dataset.months, 10));
+  });
+}
 document.getElementById("quick-km").addEventListener("click", function(e){
   var b = e.target.closest("button[data-add]"); if (!b) return;
   proxTocado = true;
@@ -224,4 +278,4 @@ document.getElementById("a-delete").addEventListener("click", function(){
   }
 });
 
-export { abrirManut, abrirAbast, itemDoPlano, kmConfirmado, jaLancado };
+export { abrirManut, abrirAbast, itemDoPlano, kmConfirmado, jaLancado, anteriorDurou };

@@ -226,12 +226,40 @@ function juntarServico(m, novo){
   var fotos = (m.fotos || []).concat((novo.fotos || []).filter(function(f){ return (m.fotos || []).indexOf(f) < 0; }));
   var r = Object.assign({}, m, {
     oficina: m.oficina || novo.oficina || "",
+    garantia: m.garantia || novo.garantia || "",
     custoPecas: n(m.custoPecas) || n(novo.custoPecas),
     custoMaoObra: n(m.custoMaoObra) || n(novo.custoMaoObra),
     obs: !novo.obs || novo.obs === m.obs ? m.obs || "" : m.obs ? m.obs + " · " + novo.obs : novo.obs
   });
   if (fotos.length) r.fotos = fotos;
   return r;
+}
+
+/* ---------- histórico da peça ---------- */
+/* Da troca mais recente para a mais antiga, na mesma regra dos alertas. */
+function ordenarTrocas(lista){
+  return (lista || []).slice().sort(function(a, b){
+    return n(b.km) - n(a.km) || ((a.data || "") < (b.data || "") ? 1 : (a.data || "") > (b.data || "") ? -1 : 0);
+  });
+}
+/* Quanto a peça anterior durou até a nova. null se os dados não permitem dizer. */
+function duracao(antiga, nova){
+  var a = diaNum(antiga.data), b = diaNum(nova.data), km = n(nova.km) - n(antiga.km);
+  if (a === null || b === null || b < a || km < 0 || !n(antiga.km) || !n(nova.km) || (b === a && !km)) return null;
+  return { km: km, dias: b - a };
+}
+/* Durou menos de 70% do previsto, em km e em tempo (o que vencer primeiro já vale como normal). */
+function durouPouco(d, iv){
+  if (!d || !iv || (!iv.km && !iv.meses)) return 0;
+  var partes = [];
+  if (iv.km) partes.push(d.km / iv.km);
+  if (iv.meses) partes.push(d.dias / (iv.meses * 365 / 12));
+  var p = Math.max.apply(null, partes);
+  return p < 0.7 ? Math.max(1, Math.round(p * 100)) : 0;
+}
+/* A peça ainda está na garantia nessa data? Data anterior ao serviço não conta. */
+function naGarantia(m, data){
+  return !!(m && m.garantia && data && data <= m.garantia && data >= (m.data || ""));
 }
 
 /* Divide um valor em n partes iguais em centavos; a sobra vai para as primeiras. */
@@ -243,4 +271,4 @@ function ratear(valor, partes){
 /* Salto grande demais costuma ser um dígito a mais. */
 function saltoSuspeito(atual, novo){ return atual > 0 && novo - atual > 20000; }
 
-export { somaMeses, consumosDe, consumosPorCombustivel, ultimoPreco, compararFlex, mediaDe, estimar, desfazerKm, aplicarKm, ratear, repetido, juntarServico, cobertoPorEixo, custos, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };
+export { somaMeses, consumosDe, consumosPorCombustivel, ultimoPreco, compararFlex, mediaDe, estimar, desfazerKm, aplicarKm, ratear, ordenarTrocas, duracao, durouPouco, naGarantia, repetido, juntarServico, cobertoPorEixo, custos, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };

@@ -6,12 +6,12 @@ import { state, veiculo, salvarPerfil, cacheLocal } from './dados.js';
 import { alertas, consumos, consumoMedio, ritmoAtual, kmAtual, custoPorKm, textoIntervalo } from './calculos.js';
 import { renderVeiculo, abrirVeiculo } from './ui-veiculos.js';
 import { renderPlano } from './ui-plano.js';
-import { abrirManut, abrirAbast } from './ui-formularios.js';
+import { abrirManut, abrirAbast, anteriorDurou } from './ui-formularios.js';
 import { renderDocs, docsAlerta, gastoDocsDoAno } from './ui-docs.js';
 import { renderCustos } from './ui-custos.js';
 import { renderFlex } from './ui-flex.js';
 import { marcaArmazenamento } from './ui-dados.js';
-import { saltoSuspeito } from './contas.js';
+import { saltoSuspeito, ordenarTrocas, naGarantia } from './contas.js';
 import { esc, num, fmtData, fmtKm, fmtBRL, fmtDec, totalManut, chave, hoje, diasAte, toast } from './util.js';
 
 var tab = "alertas", manutView = "hist";
@@ -183,27 +183,34 @@ function renderManut(){
     });
     box.innerHTML = chaves.map(function(k){
       var g = grupos[k];
-      var itens = g.itens.slice().sort(function(a,b){ return num(b.km) - num(a.km); });
+      var itens = ordenarTrocas(g.itens), antigas = itens.slice(1);
       var soma = itens.reduce(function(s,x){ return s + totalManut(x); }, 0);
       return '<div class="group-head"><span>'+esc(g.nome)+' · '+itens.length+'×</span><span class="mono">'+fmtBRL(soma)+'</span></div>' +
-             itens.map(cardManut).join("");
+             cardManut(itens[0]) +
+             (antigas.length ? '<details class="grupo"><summary><span class="lbl">Ver '+antigas.length+(antigas.length === 1 ? ' anterior' : ' anteriores')+
+               '</span></summary><div class="stack">'+antigas.map(cardManut).join("")+'</div></details>' : '');
     }).join("");
   }
 }
 function ultimoKm(itens){ return itens.reduce(function(k,m){ return Math.max(k, num(m.km)); }, 0); }
 
 function cardManut(m){
+  var dur = anteriorDurou(m);
   var custo = totalManut(m);
   var prox = [];
   if (m.proxKm) prox.push("próxima: " + fmtKm(m.proxKm) + " km");
   if (m.proxData) prox.push((m.proxKm ? "ou " : "próxima: ") + fmtData(m.proxData));
   return '<article class="card">'+
     '<div class="grow">'+
-      '<div class="title-row"><h3>'+esc(m.item)+'</h3>'+(m.categoria ? '<span class="pill cat">'+esc(m.categoria)+'</span>' : "")+'</div>'+
+      '<div class="title-row"><h3>'+esc(m.item)+'</h3>'+(m.categoria ? '<span class="pill cat">'+esc(m.categoria)+'</span>' : "")+
+        (naGarantia(m, hoje()) ? '<span class="pill ok">Garantia até '+fmtData(m.garantia)+'</span>' : '')+'</div>'+
       '<div class="meta"><span class="mono">'+fmtData(m.data)+'</span><span class="mono">'+fmtKm(m.km)+' km</span>'+
         (m.oficina ? '<span>'+esc(m.oficina)+'</span>' : "")+
         (prox.length ? '<span>'+esc(prox.join(" "))+'</span>' : "")+
         (m.fotos && m.fotos.length ? '<span>'+m.fotos.length+(m.fotos.length === 1 ? ' foto' : ' fotos')+'</span>' : "")+'</div>'+
+      (dur ? '<div class="meta"><span>A anterior durou '+esc(dur.texto)+(totalManut(dur.antes) ? ' e custou '+fmtBRL(totalManut(dur.antes)) : '')+'</span>'+
+        (dur.pouco ? '<span class="pill warn">Durou só '+dur.pouco+'% do previsto</span>' : '')+
+        (dur.garantia ? '<span class="pill warn">A anterior estava na garantia</span>' : '')+'</div>' : '')+
       (m.obs ? '<div class="obs">'+esc(m.obs)+'</div>' : "")+
     '</div>'+
     '<div class="right-col">'+

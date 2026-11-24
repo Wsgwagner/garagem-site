@@ -144,5 +144,22 @@ test('lançamento repetido', () => {
   assert.equal(k.repetido([], m(1, '2026-01-01'), O), null);
   const j = k.juntarServico({ id: 'a', km: 1, data: 'x', custoPecas: 630, custoMaoObra: 0, oficina: '', obs: 'A', fotos: ['1'] },
     { id: 'b', km: 2, custoPecas: 5, custoMaoObra: 7, oficina: 'S', obs: 'B', fotos: ['1', '2'] });
-  assert.deepEqual(j, { id: 'a', km: 1, data: 'x', custoPecas: 630, custoMaoObra: 7, oficina: 'S', obs: 'A · B', fotos: ['1', '2'] });
+  assert.deepEqual(j, { id: 'a', km: 1, data: 'x', custoPecas: 630, custoMaoObra: 7, oficina: 'S', garantia: '', obs: 'A · B', fotos: ['1', '2'] });
+});
+test('histórico da peça: ordem, duração, desgaste e garantia', () => {
+  const m = (km, data, o = {}) => ({ km, data, ...o });
+  assert.deepEqual(k.ordenarTrocas([m(1, 'a'), m(3, 'b'), m(3, 'c')]).map(x => x.data), ['c', 'b', 'a']);
+  assert.deepEqual(k.duracao(m(149642, '2026-08-31'), m(205000, '2030-08-31')), { km: 55358, dias: 1461 });
+  assert.equal(k.duracao(m(149642, '2026-08-31'), m(149000, '2026-11-24')), null);
+  assert.equal(k.duracao(m(0, '2026-08-31'), m(100, '2026-11-24')), null);
+  assert.equal(k.durouPouco({ km: 40000, dias: 900 }, { km: 100000, meses: 0 }), 40);
+  assert.equal(k.durouPouco({ km: 4000, dias: 365 }, { km: 10000, meses: 12 }), 0);
+  assert.equal(k.durouPouco({ km: 9000, dias: 100 }, { km: 10000, meses: 12 }), 0);
+  assert.equal(k.durouPouco({ km: 4000, dias: 100 }, { km: 10000, meses: 12 }), 40);
+  assert.equal(k.durouPouco(null, { km: 1 }), 0);
+  const g = m(1, '2026-08-31', { garantia: '2026-11-30' });
+  assert.equal(k.naGarantia(g, '2026-11-30'), true);
+  assert.equal(k.naGarantia(g, '2026-12-01'), false);
+  assert.equal(k.naGarantia(g, '2026-08-01'), false);
+  assert.equal(k.naGarantia(m(1, 'x'), '2026-08-01'), false);
 });

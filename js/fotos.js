@@ -152,6 +152,15 @@ async function desenhar(){
   });
   el("m-foto-add").disabled = atuais.length >= MAX_FOTOS;
 }
+/* Abre a primeira foto disponível de um registro. */
+async function verFotoDe(m){
+  var ids = (m && m.fotos) || [];
+  for (var i = 0; i < ids.length; i++){
+    var f = await obter(ids[i]);
+    if (f){ ver(f.dados); return; }
+  }
+  toast("A foto não está disponível agora");
+}
 function ver(dados){
   el("foto-grande").src = dados;
   el("dlg-foto").showModal();
@@ -199,4 +208,4 @@ if (el("m-fotos")){
   el("dlg-foto").addEventListener("close", function(){ el("foto-grande").removeAttribute("src"); });
 }
 
-export { abrirFotos, valorFotos, fotosOcupadas, confirmarFotos, apagarFotos };
+export { abrirFotos, valorFotos, fotosOcupadas, confirmarFotos, apagarFotos, verFotoDe };

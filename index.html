@@ -273,6 +273,18 @@
         <div class="field"><label for="m-mo">Mão de obra (R$)</label><input type="number" id="m-mo" min="0" step="0.01" inputmode="decimal"></div>
         <div class="field full"><label for="m-obs">Observações</label><textarea id="m-obs" placeholder="Marca da peça, garantia, o que o mecânico falou…"></textarea></div>
       </div>
+      <div class="aviso-garantia" id="m-garantia-aviso" hidden>
+        <span id="m-garantia-texto"></span>
+        <button type="button" class="btn btn-sm" id="m-garantia-nota">Ver a nota</button>
+      </div>
+      <div class="sec-title">Garantia (opcional)</div>
+      <div class="field"><label for="m-garantia">Na garantia até</label><input type="date" id="m-garantia">
+        <div class="quick" id="quick-garantia">
+          <button type="button" data-months="3">3 meses</button>
+          <button type="button" data-months="6">6 meses</button>
+          <button type="button" data-months="12">1 ano</button>
+        </div>
+      </div>
       <div class="sec-title">Fotos da nota</div>
       <div id="m-fotos" class="fotos"></div>
       <input type="file" id="m-foto-arquivo" accept="image/*" multiple hidden>

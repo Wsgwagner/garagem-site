@@ -301,6 +301,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 .foto img{width:100%;height:100%;object-fit:cover;display:block}
 #foto-grande{display:block;width:100%;height:auto}
 
+.aviso-garantia{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:14px;
+  padding:10px 12px;border:1px solid var(--warn);background:var(--warn-bg);border-radius:8px;font-size:14px}
+
 #docs-alertas:not(:empty){margin-bottom:14px}
 
 /* ---------- footer ---------- */
