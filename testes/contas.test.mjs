@@ -133,3 +133,16 @@ test('item do plano coberto por dianteiros e traseiros', () => {
   assert.equal(k.cobertoPorEixo(K, r({ amortecedores: { km: 152000 } })), false);
   assert.equal(k.cobertoPorEixo(K, r({ amortecedores: { km: 100000 } })), true);
 });
+test('lançamento repetido', () => {
+  const m = (km, data) => ({ km, data }), V = { km: 100000, meses: 0 }, O = { km: 10000, meses: 12 };
+  assert.ok(k.repetido([m(149642, '2026-08-31')], m(153355, '2026-11-24'), V));
+  assert.ok(k.repetido([m(153355, '2026-11-24')], m(153355, '2026-11-24'), O));
+  assert.equal(k.repetido([m(143355, '2026-05-01')], m(153355, '2026-11-24'), O), null);
+  assert.equal(k.repetido([m(153000, '2026-01-01')], m(153355, '2026-11-24'), O), null);
+  assert.ok(k.repetido([m(149642, '2026-11-20')], m(149900, '2026-11-24'), null));
+  assert.equal(k.repetido([m(149642, '2026-08-31')], m(149900, '2026-11-24'), null), null);
+  assert.equal(k.repetido([], m(1, '2026-01-01'), O), null);
+  const j = k.juntarServico({ id: 'a', km: 1, data: 'x', custoPecas: 630, custoMaoObra: 0, oficina: '', obs: 'A', fotos: ['1'] },
+    { id: 'b', km: 2, custoPecas: 5, custoMaoObra: 7, oficina: 'S', obs: 'B', fotos: ['1', '2'] });
+  assert.deepEqual(j, { id: 'a', km: 1, data: 'x', custoPecas: 630, custoMaoObra: 7, oficina: 'S', obs: 'A · B', fotos: ['1', '2'] });
+});

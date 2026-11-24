@@ -5,7 +5,7 @@
 import { veiculo, gravar, apagar } from './dados.js';
 import { intervalo, textoIntervalo, kmAtual } from './calculos.js';
 import { abrirFotos, valorFotos, fotosOcupadas, confirmarFotos, apagarFotos } from './fotos.js';
-import { aplicarKm, desfazerKm, saltoSuspeito } from './contas.js';
+import { aplicarKm, desfazerKm, saltoSuspeito, repetido, juntarServico } from './contas.js';
 import { chave, num, hoje, fmtData, fmtKm, somaMeses, dateVal, toast, uid } from './util.js';
 
 /* Acha no plano do veículo o item com esse nome. */
@@ -23,10 +23,17 @@ function kmConfirmado(km){
   return !saltoSuspeito(atual, km) ||
     confirm("O odômetro vai de " + fmtKm(atual) + " para " + fmtKm(km) + " km. Está certo?");
 }
+/* Registro já existente que parece ser esta mesma troca. */
+function jaLancado(obj){
+  var p = itemDoPlano(obj.item);
+  return repetido(veiculo().manut.filter(function(m){ return chave(m.item) === chave(obj.item) && m.id !== obj.id; }),
+    obj, p && p.fonte !== "semtroca" ? intervalo(p) : null);
+}
 function acertarKm(antigo, obj){
   if (aplicarKm(veiculo(), antigo, obj)) veiculo().atualizadoEm = hoje();
 }
 
+var outraTroca = false, dupNovo = null, dupExiste = null;
 var dlgM = document.getElementById("dlg-manut"), formM = document.getElementById("form-manut"), editM = null, proxTocado = false;
 
 function autoProxima(){
@@ -103,6 +110,18 @@ formM.addEventListener("submit", function(e){
     proxData: document.getElementById("m-proxdata").value || ""
   };
   if (valorFotos().length) obj.fotos = valorFotos();
+  if (!editM && !outraTroca){
+    var igual = jaLancado(obj), aviso = document.getElementById("dlg-dup");
+    if (igual && !aviso){
+      if (!confirm("“" + igual.item + "” já está lançado em " + fmtData(igual.data) + ", aos " + fmtKm(igual.km) + " km. Gravar outro?")) return;
+    } else if (igual){
+      dupNovo = obj; dupExiste = igual;
+      document.getElementById("dup-texto").textContent = "“" + igual.item + "” já está lançado em " + fmtData(igual.data) +
+        ", aos " + fmtKm(igual.km) + " km" + (igual.oficina ? ", em " + igual.oficina : "") + ". É a mesma troca?";
+      aviso.showModal();
+      return;
+    }
+  }
   if (!kmConfirmado(obj.km)) return;
   acertarKm(editM, obj);
   var ok = gravar("manutencoes", obj);
@@ -114,6 +133,29 @@ formM.addEventListener("submit", function(e){
   confirmarFotos();
   toast(editM ? "Registro atualizado" : "Serviço registrado");
 });
+/* ---------- aviso de lançamento repetido ---------- */
+if (document.getElementById("dlg-dup")){
+  var dlgDup = document.getElementById("dlg-dup");
+  document.getElementById("dup-voltar").addEventListener("click", function(){ dlgDup.close(); });
+  document.getElementById("dup-outra").addEventListener("click", function(){
+    dlgDup.close();
+    outraTroca = true;
+    formM.requestSubmit();
+    outraTroca = false;
+  });
+  document.getElementById("dup-juntar").addEventListener("click", function(){
+    dlgDup.close();
+    var atual = veiculo().manut.filter(function(m){ return m.id === dupExiste.id; })[0];
+    if (!atual){ toast("O registro anterior não existe mais"); return; }
+    var junto = juntarServico(atual, dupNovo);
+    if ((junto.fotos || []).length > 3){ toast("Cada serviço aceita até 3 fotos. Remova alguma."); return; }
+    var ok = gravar("manutencoes", junto);
+    dlgM.close();
+    if (!ok){ alert("ATENÇÃO: este navegador não conseguiu salvar. Use “Salvar backup” antes de fechar o app."); return; }
+    confirmarFotos();
+    toast("Juntado ao registro de " + fmtData(atual.data));
+  });
+}
 document.getElementById("m-cancel").addEventListener("click", function(){ dlgM.close(); });
 document.getElementById("m-delete").addEventListener("click", function(){
   if (!editM) return;
@@ -182,4 +224,4 @@ document.getElementById("a-delete").addEventListener("click", function(){
   }
 });
 
-export { abrirManut, abrirAbast, itemDoPlano, kmConfirmado };
+export { abrirManut, abrirAbast, itemDoPlano, kmConfirmado, jaLancado };

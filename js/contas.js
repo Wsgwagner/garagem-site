@@ -205,6 +205,35 @@ function custos(v, hoje){
   };
 }
 
+/* ---------- lançamento repetido ---------- */
+/* Registro da mesma peça feito cedo demais para ser outra troca: menos da metade do
+   intervalo. Peça sem intervalo: até 1.000 km e 30 dias. mesmos = registros da peça. */
+function repetido(mesmos, novo, iv){
+  iv = iv || {};
+  var semPrazo = !iv.km && !iv.meses, limKm = iv.km ? iv.km / 2 : 1000;
+  var limDias = iv.meses ? iv.meses * 365 / 24 : 30, achou = null, menor = Infinity;
+  (mesmos || []).forEach(function(m){
+    var dk = Math.abs(n(m.km) - n(novo.km)), a = diaNum(m.data), b = diaNum(novo.data);
+    var dd = a === null || b === null ? 0 : Math.abs(a - b);
+    if (iv.km || semPrazo){ if (dk >= limKm) return; }
+    if (iv.meses || semPrazo){ if (dd >= limDias) return; }
+    if (dk + dd < menor){ menor = dk + dd; achou = m; }
+  });
+  return achou;
+}
+/* Completa o que já existe com o que veio no novo; nada que já estava é trocado. */
+function juntarServico(m, novo){
+  var fotos = (m.fotos || []).concat((novo.fotos || []).filter(function(f){ return (m.fotos || []).indexOf(f) < 0; }));
+  var r = Object.assign({}, m, {
+    oficina: m.oficina || novo.oficina || "",
+    custoPecas: n(m.custoPecas) || n(novo.custoPecas),
+    custoMaoObra: n(m.custoMaoObra) || n(novo.custoMaoObra),
+    obs: !novo.obs || novo.obs === m.obs ? m.obs || "" : m.obs ? m.obs + " · " + novo.obs : novo.obs
+  });
+  if (fotos.length) r.fotos = fotos;
+  return r;
+}
+
 /* Divide um valor em n partes iguais em centavos; a sobra vai para as primeiras. */
 function ratear(valor, partes){
   var cent = Math.round(n(valor) * 100), base = Math.floor(cent / partes), sobra = cent - base * partes, out = [];
@@ -214,4 +243,4 @@ function ratear(valor, partes){
 /* Salto grande demais costuma ser um dígito a mais. */
 function saltoSuspeito(atual, novo){ return atual > 0 && novo - atual > 20000; }
 
-export { somaMeses, consumosDe, consumosPorCombustivel, ultimoPreco, compararFlex, mediaDe, estimar, desfazerKm, aplicarKm, ratear, cobertoPorEixo, custos, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };
+export { somaMeses, consumosDe, consumosPorCombustivel, ultimoPreco, compararFlex, mediaDe, estimar, desfazerKm, aplicarKm, ratear, repetido, juntarServico, cobertoPorEixo, custos, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };

@@ -5,8 +5,8 @@
 import { veiculo, gravarVarios } from './dados.js';
 import { intervalo, kmAtual } from './calculos.js';
 import { aplicarKm, ratear } from './contas.js';
-import { itemDoPlano, kmConfirmado } from './ui-formularios.js';
-import { esc, num, chave, hoje, fmtBRL, somaMeses, toast, uid } from './util.js';
+import { itemDoPlano, kmConfirmado, jaLancado } from './ui-formularios.js';
+import { esc, num, chave, hoje, fmtBRL, fmtData, fmtKm, somaMeses, toast, uid } from './util.js';
 
 /* Serviços comuns que não têm prazo e por isso não estão no plano. */
 var COMUNS = [
@@ -98,11 +98,10 @@ form.addEventListener("submit", function(e){
   if (!escolhidos.length){ toast("Marque ao menos um serviço"); return; }
   var data = el("r-data").value || hoje(), km = Math.round(num(el("r-km").value));
   if (!kmConfirmado(km)) return;
-  var repetidos = escolhidos.filter(function(x){
-    return v.manut.some(function(m){ return m.data === data && num(m.km) === km && chave(m.item) === chave(x.nome); });
-  });
-  if (repetidos.length && !confirm("Já existe registro nesta data e km de: " +
-      repetidos.map(function(x){ return x.nome; }).join(", ") + ".\n\nGravar de novo mesmo assim?")) return;
+  var repetidos = escolhidos.map(function(x){ return jaLancado({ id:"", item:x.nome, data:data, km:km }); }).filter(Boolean);
+  if (repetidos.length && !confirm("Parece que já está lançado:\n\n" +
+      repetidos.map(function(m){ return m.item + " — " + fmtData(m.data) + ", " + fmtKm(m.km) + " km"; }).join("\n") +
+      "\n\nOK: foi outra troca, gravar mesmo assim.\nCancelar: voltar e desmarcar.")) return;
 
   var partes = ratear(num(el("r-mo").value), escolhidos.length);
   var registros = escolhidos.map(function(x, i){
