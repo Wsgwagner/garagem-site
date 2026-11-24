@@ -354,6 +354,37 @@
   </form>
 </dialog>
 
+<!-- ================= verificação ================= -->
+<dialog id="dlg-verif">
+  <form method="dialog" id="form-verif">
+    <div class="dlg-head"><h2>Verificar: <span id="vf-nome"></span></h2></div>
+    <div class="dlg-body">
+      <p class="helper" style="margin:0 0 10px">Para anotar que você conferiu a peça sem trocar. Não conta como troca nem como gasto.</p>
+      <div class="grid">
+        <div class="field"><label for="vf-data">Data</label><input type="date" id="vf-data" required></div>
+        <div class="field"><label for="vf-km">Km</label><input type="number" id="vf-km" min="0" step="1" inputmode="numeric"></div>
+        <div class="field"><label for="vf-estado">Como está</label>
+          <select id="vf-estado"><option value="boa">Boa</option><option value="atencao">Atenção</option><option value="trocar">Precisa trocar</option></select>
+        </div>
+        <div class="field"><label for="vf-vida">Vida útil (%)</label><input type="number" id="vf-vida" min="0" max="100" step="1" inputmode="numeric" placeholder="Opcional"></div>
+        <div class="field full"><label for="vf-obs">Observação</label><input type="text" id="vf-obs" placeholder="Opcional"></div>
+      </div>
+      <div id="vf-prox"><div class="sec-title">Verificar de novo</div>
+        <div class="grid">
+          <div class="field"><label for="vf-proxkm">Aos (km)</label><input type="number" id="vf-proxkm" min="0" step="1" inputmode="numeric"></div>
+          <div class="field"><label for="vf-proxdata">Ou até a data</label><input type="date" id="vf-proxdata"></div>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn btn-ghost" id="vf-excluir" hidden>Excluir</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="vf-cancelar">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
 <!-- ================= lançamento repetido ================= -->
 <dialog id="dlg-dup">
   <div class="dlg-head"><h2>Este serviço já está lançado</h2></div>

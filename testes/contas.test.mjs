@@ -163,3 +163,20 @@ test('histórico da peça: ordem, duração, desgaste e garantia', () => {
   assert.equal(k.naGarantia(g, '2026-08-01'), false);
   assert.equal(k.naGarantia(m(1, 'x'), '2026-08-01'), false);
 });
+test('verificação', () => {
+  const vf = (estado, o = {}) => ({ data: '2026-11-24', em: '2026-11-24T12', estado, proxKm: 158355, proxData: '2027-05-24', ...o });
+  assert.equal(k.verifValida(undefined, null), false);
+  assert.equal(k.verifValida(vf('boa'), null), true);
+  assert.equal(k.verifValida(vf('boa'), { data: '2026-11-25' }), false);
+  assert.equal(k.verifValida(vf('boa'), { data: '2026-11-24', mod: '2026-11-24T13' }), false);
+  assert.equal(k.verifValida(vf('boa'), { data: '2026-11-24', mod: '2026-11-24T11' }), true);
+  const N = (e, nivel, troca, km = 153355, h = '2026-11-24', o) => k.nivelVerif(vf(e, o), nivel, troca, km, h);
+  assert.equal(N('boa', 'conf', false), 'ok');
+  assert.equal(N('boa', 'none', false), 'ok');
+  assert.equal(N('boa', 'crit', true), 'crit');
+  assert.equal(N('atencao', 'conf', false), 'warn');
+  assert.equal(N('trocar', 'ok', true), 'crit');
+  assert.equal(N('boa', 'conf', false, 158355), 'conf');
+  assert.equal(N('boa', 'none', false, 153355, '2027-05-24'), 'conf');
+  assert.equal(N('boa', 'crit', true, 158355), 'crit');
+});

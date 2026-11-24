@@ -4,7 +4,7 @@
 
 import { veiculo } from './dados.js';
 import { num, chave, hoje, diasAte, somaMeses, fmtKm } from './util.js';
-import { consumosDe, mediaDe, estimar, cobertoPorEixo, ritmo, preverData } from './contas.js';
+import { consumosDe, mediaDe, estimar, cobertoPorEixo, verifValida, nivelVerif, ritmo, preverData } from './contas.js';
 
 function planoDoVeiculo(){
   var v = veiculo();
@@ -90,11 +90,23 @@ function alertas(){
     var ordem = Math.min(faltaKm === null ? 1e9 : faltaKm, faltaDias === null ? 1e9 : faltaDias * 40);
     if (origem === "confirmar" && nivel === "ok") nivel = "conf";
     if (origem === "sem-registro") ordem = 2e9;
+    var vf = p && verifValida(p.verif, m) ? p.verif : null;
+    if (vf){
+      nivel = nivelVerif(vf, nivel, !!m, km, hoje());
+      if (!m){ // sem troca registrada, o alvo é a próxima verificação
+        origem = "verificado";
+        proxKm = vf.proxKm || null; proxData = vf.proxData || "";
+        faltaKm = proxKm !== null ? proxKm - km : null;
+        faltaDias = proxData ? diasAte(proxData) : null;
+        ordem = Math.min(faltaKm === null ? 1e9 : faltaKm, faltaDias === null ? 1e9 : faltaDias * 40);
+      }
+      if (vf.estado === "trocar") ordem = -1e9;
+    }
     // Só há previsão quando o alvo em km é confiável e ainda não chegou.
-    var prevista = rit && (nivel === "ok" || nivel === "warn") && origem !== "confirmar" && faltaKm > 0
+    var prevista = rit && (nivel === "ok" || nivel === "warn") && origem !== "confirmar" && origem !== "verificado" && faltaKm > 0
       ? preverData(faltaKm, rit.kmDia, rit.lidoEm) : "";
     if (prevista && proxData && proxData <= prevista) prevista = "";
-    return { prevista:prevista, nome:nome, p:p, m:m, proxKm:proxKm, proxData:proxData, origem:origem,
+    return { vf:vf, prevista:prevista, nome:nome, p:p, m:m, proxKm:proxKm, proxData:proxData, origem:origem,
              faltaKm:faltaKm, faltaDias:faltaDias, nivel:nivel, ordem:ordem };
   }
 

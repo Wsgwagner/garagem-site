@@ -8,6 +8,7 @@ import { abrirVeiculo } from './ui-veiculos.js';
 import './ui-plano.js';
 import './ui-dados.js';
 import './ui-revisao.js';
+import './ui-verif.js';
 import './nuvem.js';
 
 aoMudar(render);

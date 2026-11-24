@@ -66,7 +66,7 @@ function renderTiles(al, km){
   var confirmar = al.filter(function(a){ return a.nivel === "conf" || a.nivel === "none"; }).length;
   var alertaValor = vencidos || perto || (km ? 0 : "—");
   var alertaNota = !km && !vencidos && !perto ? "informe o odômetro para calcular"
-                 : vencidos ? (vencidos === 1 ? "item vencido" : "itens vencidos")
+                 : vencidos ? (vencidos === 1 ? "item para resolver" : "itens para resolver")
                  : perto ? (perto === 1 ? "item chegando na hora" : "itens chegando na hora")
                  : acompanhados + " em dia" + (confirmar ? " · " + confirmar + " sem registro seu" : "");
 
@@ -93,8 +93,18 @@ function cardAlerta(a){
   if (a.proxKm) alvo.push(fmtKm(a.proxKm) + " km");
   if (a.proxData) alvo.push(fmtData(a.proxData));
   var rot = a.nivel === "crit" ? "Passou do ponto" : a.nivel === "warn" ? "Chegando na hora" : a.nivel === "ok" ? "Em dia" : a.nivel === "conf" ? "Confirmar" : "Sem registro";
+  if (a.vf){
+    if (a.vf.estado === "trocar") rot = "Precisa trocar";
+    else if (a.nivel === "warn" && a.vf.estado === "atencao") rot = "Atenção";
+    else if (a.nivel === "ok" && a.origem === "verificado") rot = "Verificado";
+    else if (a.nivel === "conf") rot = "Verificar de novo";
+  }
+  var linhaVf = a.vf ? "Verificado em " + fmtData(a.vf.data) + (a.vf.km ? ", " + fmtKm(a.vf.km) + " km" : "") + ": " +
+    ({ boa:"boa", atencao:"atenção", trocar:"precisa trocar" }[a.vf.estado] || "") + (a.vf.vida ? " · " + a.vf.vida + "% de vida" : "") +
+    (a.vf.obs ? " · " + a.vf.obs : "") : "";
   var linha2 = a.m
     ? "Última troca: " + fmtData(a.m.data) + " aos " + fmtKm(a.m.km) + " km" + (a.m.oficina ? " · " + esc(a.m.oficina) : "")
+    : a.origem === "verificado" ? "Sem troca registrada"
     : (a.origem === "estimado"
         ? "Sem registro seu — estimativa: a primeira troca do plano ainda não chegou"
         : a.origem === "confirmar"
@@ -107,13 +117,15 @@ function cardAlerta(a){
         '<span class="pill '+(a.nivel === "none" || a.nivel === "conf" ? "" : a.nivel)+'">'+rot+'</span>'+
         (a.p ? '<span class="pill">a cada '+esc(textoIntervalo(a.p))+'</span>' : '')+
       '</div>'+
-      (alvo.length && a.nivel !== "conf" ? '<div class="meta"><span>Alvo'+(a.origem === "confirmar" ? " provável" : "")+': '+esc(alvo.join(" ou "))+'</span><span>'+esc(partes.join(" · "))+'</span></div>' : '')+
+      (alvo.length && a.nivel !== "conf" ? '<div class="meta"><span>'+(a.origem === "verificado" ? "Ver de novo" : 'Alvo'+(a.origem === "confirmar" ? " provável" : ""))+': '+esc(alvo.join(" ou "))+'</span><span>'+esc(partes.join(" · "))+'</span></div>' : '')+
       (a.prevista ? '<div class="meta"><span><b>'+esc(textoPrevisao(a.prevista))+'</b></span></div>' : '')+
+      (linhaVf ? '<div class="meta"><span>'+esc(linhaVf)+'</span></div>' : '')+
       '<div class="meta"><span>'+linha2+'</span></div>'+
       (a.p && a.p.nota ? '<div class="obs">'+esc(a.p.nota)+'</div>' : '')+
     '</div>'+
     '<div class="right-col">'+
       '<button class="btn btn-sm" data-novo="'+esc(a.nome)+'">Registrar '+(a.m ? 'nova ' : '')+'troca</button>'+
+      (a.p ? '<button class="btn btn-sm" data-verif="'+esc(a.p.id)+'">Verificar</button>' : '')+
       (a.m ? '<button class="btn btn-sm" data-edit-m="'+esc(a.m.id)+'">Ver registro</button>' : '')+
     '</div>'+
   '</article>';

@@ -262,6 +262,22 @@ function naGarantia(m, data){
   return !!(m && m.garantia && data && data <= m.garantia && data >= (m.data || ""));
 }
 
+/* ---------- verificação ---------- */
+/* A verificação vale até a peça ser trocada depois dela. */
+function verifValida(vf, m){
+  if (!vf || !vf.data) return false;
+  if (!m) return true;
+  return vf.data > (m.data || "") || (vf.data === m.data && (vf.em || "") > (m.mod || ""));
+}
+/* Nível do alerta com a verificação. "boa" não esconde troca com prazo vencido. */
+function nivelVerif(vf, nivel, temTroca, km, hoje){
+  if (vf.estado === "trocar") return "crit";
+  var refazer = (vf.proxKm && km >= vf.proxKm) || (vf.proxData && hoje >= vf.proxData);
+  if (refazer) return temTroca && nivel !== "ok" ? nivel : "conf";
+  if (vf.estado === "atencao") return nivel === "crit" && temTroca ? "crit" : "warn";
+  return temTroca ? nivel : "ok";
+}
+
 /* Divide um valor em n partes iguais em centavos; a sobra vai para as primeiras. */
 function ratear(valor, partes){
   var cent = Math.round(n(valor) * 100), base = Math.floor(cent / partes), sobra = cent - base * partes, out = [];
@@ -271,4 +287,4 @@ function ratear(valor, partes){
 /* Salto grande demais costuma ser um dígito a mais. */
 function saltoSuspeito(atual, novo){ return atual > 0 && novo - atual > 20000; }
 
-export { somaMeses, consumosDe, consumosPorCombustivel, ultimoPreco, compararFlex, mediaDe, estimar, desfazerKm, aplicarKm, ratear, ordenarTrocas, duracao, durouPouco, naGarantia, repetido, juntarServico, cobertoPorEixo, custos, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };
+export { somaMeses, consumosDe, consumosPorCombustivel, ultimoPreco, compararFlex, mediaDe, estimar, desfazerKm, aplicarKm, ratear, verifValida, nivelVerif, ordenarTrocas, duracao, durouPouco, naGarantia, repetido, juntarServico, cobertoPorEixo, custos, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };

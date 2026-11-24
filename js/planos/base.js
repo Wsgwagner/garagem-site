@@ -112,8 +112,11 @@ var ITENS_BASE = [
   { item:"Bateria", cat:"Elétrica", km:0, meses:36, fonte:"oficina",
     nota:"Costuma durar de 3 a 4 anos. Calor e carro parado por muitos dias encurtam." },
 
-  { item:"Palhetas do limpador", cat:"Carroceria e interior", km:0, meses:12, fonte:"oficina",
-    nota:"Trocar antes do período de chuva vale mais que esperar riscar o vidro." }
+  { item:"Palhetas dianteiras", cat:"Carroceria e interior", km:0, meses:12, fonte:"oficina",
+    nota:"Trocar antes do período de chuva vale mais que esperar riscar o vidro." },
+
+  { item:"Palheta traseira", cat:"Carroceria e interior", km:0, meses:12, fonte:"oficina",
+    nota:"Se o carro não tiver limpador traseiro, desative este item no plano." }
 ];
 
 /* As perguntas do cadastro de veículo. A ordem aqui é a ordem que aparece na tela. */

@@ -84,6 +84,7 @@ function montarPlano(perfil, modeloId){
 function reconstruirPlano(planoAtual, perfil, modeloId){
   var novo = montarPlano(perfil, modeloId);
   (planoAtual || []).forEach(function(antigo){
+    novo.forEach(function(p){ if (antigo.verif && chave(p.item) === chave(antigo.item)) p.verif = antigo.verif; });
     if (antigo.fonte !== "voce" && !antigo.criadoPorVoce) return;
     var achou = false;
     novo.forEach(function(p){ if (chave(p.item) === chave(antigo.item)){ achou = true;

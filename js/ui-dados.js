@@ -131,7 +131,7 @@ function montarRelatorio(){
       if (a.proxKm) alvo.push(fmtKm(a.proxKm)+" km");
       if (a.proxData) alvo.push(fmtData(a.proxData));
       h += '<tr><td>'+esc(a.nome)+'</td><td class="n">'+esc(alvo.join(" ou "))+'</td><td>'+
-           (a.nivel === "crit" ? "Passou do ponto" : "Chegando na hora")+'</td></tr>';
+           (a.vf && a.vf.estado === "trocar" ? "Precisa trocar" : a.vf && a.vf.estado === "atencao" ? "Atenção" : a.nivel === "crit" ? "Passou do ponto" : "Chegando na hora")+'</td></tr>';
     });
     h += '</tbody></table>';
   }
