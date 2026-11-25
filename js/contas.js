@@ -287,4 +287,21 @@ function ratear(valor, partes){
 /* Salto grande demais costuma ser um dígito a mais. */
 function saltoSuspeito(atual, novo){ return atual > 0 && novo - atual > 20000; }
 
-export { somaMeses, consumosDe, consumosPorCombustivel, ultimoPreco, compararFlex, mediaDe, estimar, desfazerKm, aplicarKm, ratear, verifValida, nivelVerif, ordenarTrocas, duracao, durouPouco, naGarantia, repetido, juntarServico, cobertoPorEixo, custos, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };
+/* Registro que não combina com esta data e este km: o hodômetro não anda para
+   trás, e mais de 1.000 km por dia costuma ser data ou número errado.
+   Devolve o mais próximo no tempo, ou null. */
+var KM_POR_DIA = 1000;
+function conflitoDataKm(registros, novo){
+  var d = diaNum(novo.data), km = n(novo.km), pior = null, menor = Infinity;
+  if (d === null || km <= 0) return null;
+  (registros || []).forEach(function(r){
+    var rd = diaNum(r.data), rk = n(r.km);
+    if ((novo.id && r.id === novo.id) || rd === null || rk <= 0) return;
+    var dias = Math.abs(d - rd), dif = (km - rk) * (d < rd ? -1 : 1);
+    var ruim = (dias > 0 && dif < 0) || Math.abs(dif) > KM_POR_DIA * (dias + 1);
+    if (ruim && dias < menor){ menor = dias; pior = r; }
+  });
+  return pior;
+}
+
+export { conflitoDataKm, somaMeses, consumosDe, consumosPorCombustivel, ultimoPreco, compararFlex, mediaDe, estimar, desfazerKm, aplicarKm, ratear, verifValida, nivelVerif, ordenarTrocas, duracao, durouPouco, naGarantia, repetido, juntarServico, cobertoPorEixo, custos, nivelDoc, gastoDocs, proximoDoc, ritmo, preverData, saltoSuspeito };

@@ -5,7 +5,7 @@
 import { veiculo, gravar, apagar } from './dados.js';
 import { intervalo, textoIntervalo, kmAtual } from './calculos.js';
 import { abrirFotos, valorFotos, fotosOcupadas, confirmarFotos, apagarFotos, verFotoDe } from './fotos.js';
-import { aplicarKm, desfazerKm, saltoSuspeito, repetido, juntarServico, ordenarTrocas, duracao, durouPouco, naGarantia } from './contas.js';
+import { aplicarKm, desfazerKm, saltoSuspeito, conflitoDataKm, repetido, juntarServico, ordenarTrocas, duracao, durouPouco, naGarantia } from './contas.js';
 import { chave, num, hoje, fmtData, fmtKm, somaMeses, dateVal, toast, uid } from './util.js';
 
 /* Acha no plano do veículo o item com esse nome. */
@@ -17,11 +17,18 @@ function itemDoPlano(nome){
   return achou;
 }
 
-/* Dígito a mais é o erro mais comum: pergunta antes de aceitar um salto grande. */
-function kmConfirmado(km){
-  var atual = kmAtual();
-  return !saltoSuspeito(atual, km) ||
-    confirm("O odômetro vai de " + fmtKm(atual) + " para " + fmtKm(km) + " km. Está certo?");
+/* Dígito a mais é o erro mais comum: pergunta antes de aceitar um salto grande
+   ou um km que não combina com a data dos outros registros. */
+function kmConfirmado(obj, antigo){
+  var atual = kmAtual(), v = veiculo();
+  if (saltoSuspeito(atual, obj.km))
+    return confirm("O odômetro vai de " + fmtKm(atual) + " para " + fmtKm(obj.km) + " km. Está certo?");
+  if (!v || (antigo && antigo.data === obj.data && num(antigo.km) === num(obj.km))) return true;
+  var r = conflitoDataKm(v.manut.concat(v.abast), obj);
+  return !r || confirm(["A data e o km não combinam com outro registro:", "",
+    (r.item || "Abastecimento") + " — " + fmtData(r.data) + ", " + fmtKm(r.km) + " km",
+    "Este — " + fmtData(obj.data) + ", " + fmtKm(obj.km) + " km", "",
+    "OK: está certo, gravar assim.", "Cancelar: voltar e corrigir."].join(String.fromCharCode(10)));
 }
 /* Registro já existente que parece ser esta mesma troca. */
 function jaLancado(obj){
@@ -169,7 +176,7 @@ formM.addEventListener("submit", function(e){
       return;
     }
   }
-  if (!kmConfirmado(obj.km)) return;
+  if (!kmConfirmado(obj, editM)) return;
   acertarKm(editM, obj);
   var ok = gravar("manutencoes", obj);
   dlgM.close();
@@ -261,7 +268,7 @@ formA.addEventListener("submit", function(e){
     posto: document.getElementById("a-posto").value.trim(),
     cheio: document.getElementById("a-cheio").checked
   };
-  if (!kmConfirmado(obj.km)) return;
+  if (!kmConfirmado(obj, editA)) return;
   acertarKm(editA, obj);
   var ok = gravar("abastecimentos", obj);
   dlgA.close();

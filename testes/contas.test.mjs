@@ -180,3 +180,17 @@ test('verificação', () => {
   assert.equal(N('boa', 'none', false, 153355, '2027-05-24'), 'conf');
   assert.equal(N('boa', 'crit', true, 158355), 'crit');
 });
+test('data e km que não combinam', () => {
+  const r = (id, data, km) => ({ id, data, km });
+  const base = [r('a', '2026-09-26', 152000), r('b', '2026-11-24', 153355)];
+  assert.equal(k.conflitoDataKm(base, r('n', '2026-11-24', 154845)).id, 'b'); // 1.490 km no mesmo dia
+  assert.equal(k.conflitoDataKm(base, r('n', '2026-10-24', 153355)), null);
+  assert.equal(k.conflitoDataKm(base, r('n', '2026-11-24', 152000)).id, 'b');
+  assert.equal(k.conflitoDataKm(base, r('n', '2026-10-01', 151000)).id, 'a'); // andou para trás
+  assert.equal(k.conflitoDataKm(base, r('n', '2026-10-01', 154000)).id, 'b');
+  assert.equal(k.conflitoDataKm(base, r('b', '2026-11-24', 154845)), null); // o próprio registro não conta
+  assert.equal(k.conflitoDataKm(base, r('n', '2026-11-24', 153900)), null);
+  assert.equal(k.conflitoDataKm(base, r('n', '2026-11-25', 154900)), null);
+  assert.equal(k.conflitoDataKm(base, r('n', '', 1)), null);
+  assert.equal(k.conflitoDataKm(base, r('n', '2026-11-24', 0)), null);
+});

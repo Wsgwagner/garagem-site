@@ -97,7 +97,7 @@ form.addEventListener("submit", function(e){
   if (!v) return;
   if (!escolhidos.length){ toast("Marque ao menos um serviço"); return; }
   var data = el("r-data").value || hoje(), km = Math.round(num(el("r-km").value));
-  if (!kmConfirmado(km)) return;
+  if (!kmConfirmado({ data: data, km: km })) return;
   var repetidos = escolhidos.map(function(x){ return jaLancado({ id:"", item:x.nome, data:data, km:km }); }).filter(Boolean);
   if (repetidos.length && !confirm("Parece que já está lançado:\n\n" +
       repetidos.map(function(m){ return m.item + " — " + fmtData(m.data) + ", " + fmtKm(m.km) + " km"; }).join("\n") +
